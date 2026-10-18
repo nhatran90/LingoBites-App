@@ -121,7 +121,7 @@ Thông báo riêng tư ngoài app cần thêm: Microsoft Azure Speech (Microsoft
 - Không log audio, đường dẫn file có tên người dùng, hay điểm gắn với danh tính.
 - Không có lối nào gửi audio khi chưa đồng ý: kiểm tra ở hook (trước khi ghi) và ở client (`beforeSend`, ngay trước request).
 - Trẻ em: ẩn nút ở app; server vẫn trả 403 nếu app cũ hay lỗi.
-- Không thêm thư viện. Dùng `react-native-nitro-sound` (ghi âm), `react-native-fs` (sha256), `react-i18next`, `zod` đang có.
+- Không thêm thư viện. Dùng `react-native-nitro-sound` (ghi âm), `@dr.pogodin/react-native-fs` (sha256), `react-i18next`, `zod` đang có.
 
 ## 6. Kiểm tra trước khi coi bước 3 là xong
 

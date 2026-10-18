@@ -28,6 +28,7 @@ import type {
   VocabularySaveControl,
 } from '../logic/useLessonSavedItems';
 import {CanonicalBlockView} from './CanonicalBlockView';
+import {InterlinearSentence} from './InterlinearSentence';
 import {LessonStatusBanners} from './LessonStatusBanners';
 import {
   SentenceAnalysisPanel,
@@ -258,12 +259,12 @@ export function SentenceStudy({
                   />
                 </View>
               </View>
-              <AppText style={styles.english}>{sentence.text_en}</AppText>
-              {sentence.ipa ? (
-                <AppText color="muted" style={styles.ipa}>
-                  {sentence.ipa}
-                </AppText>
-              ) : null}
+              <InterlinearSentence
+                ipa={sentence.ipa}
+                testID={`sentence-study-en-${sentence.id}`}
+                text={sentence.text_en}
+                wordStyle={styles.english}
+              />
               {showVi ? (
                 <View style={styles.viBox}>
                   <AppText
@@ -360,10 +361,6 @@ function makeStyles(theme: AppTheme) {
       fontSize: 22,
       fontWeight: '800',
       lineHeight: 30,
-    },
-    ipa: {
-      fontSize: 14,
-      lineHeight: 20,
     },
     viBox: {
       backgroundColor: theme.colors.surfaceMuted,

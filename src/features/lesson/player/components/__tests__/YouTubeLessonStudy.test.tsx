@@ -23,7 +23,8 @@ function sentence(
     position,
     text_en: `Sentence ${position} en.`,
     text_vi: `Câu ${position} vi.`,
-    ipa: `ipa-${position}`,
+    // One IPA token per written word, so it shows under each word.
+    ipa: `ipa-${position} w'ʌn 'ɛn`,
     start_ms: cues ? cues.start : null,
     end_ms: cues ? cues.end : null,
   };

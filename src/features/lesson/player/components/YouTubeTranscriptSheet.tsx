@@ -17,7 +17,6 @@ import {getStickerEdge} from '@ui/theme/hardShadow';
 import type {LessonSentence} from '@core/schemas/lesson';
 
 import {formatCueLabel} from '../logic/canonicalYouTubeCues';
-import {normalizeIpa} from '../logic/sentenceIpa';
 import type {SentenceSaveControl} from '../logic/useSavedVideoSentences';
 import {YouTubeSheet} from './YouTubeSheet';
 
@@ -29,8 +28,6 @@ export type YouTubeTranscriptSheetProps = {
   /** When false, highlight follows the study card (AC-002 S2). */
   videoPlaying: boolean;
   showTranslation: boolean;
-  /** The study screen's IPA toggle also shows IPA under each line. */
-  showIpa?: boolean;
   /** ♥ on each row: keeps the sentence in "Câu đã lưu". */
   sentenceSave?: SentenceSaveControl;
   onClose: () => void;
@@ -44,7 +41,6 @@ export function YouTubeTranscriptSheet({
   currentIndex,
   videoPlaying,
   showTranslation,
-  showIpa = false,
   sentenceSave,
   onClose,
   onSelectSentence,
@@ -103,15 +99,6 @@ export function YouTubeTranscriptSheet({
             <AppText style={styles.en} variant="bodyLg">
               {item.text_en}
             </AppText>
-            {showIpa && item.ipa ? (
-              <AppText
-                color="muted"
-                testID={`youtube-transcript-ipa-${item.id}`}
-                variant="body"
-              >
-                {normalizeIpa(item.ipa)}
-              </AppText>
-            ) : null}
             {showTranslation ? (
               <AppText color="secondary" variant="body">
                 {item.text_vi}
@@ -139,7 +126,6 @@ export function YouTubeTranscriptSheet({
       highlightIndex,
       onSelectSentence,
       sentenceSave,
-      showIpa,
       showTranslation,
       styles,
       t,

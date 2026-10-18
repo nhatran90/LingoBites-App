@@ -21,11 +21,7 @@ import {getStickerEdge} from '@ui/theme/hardShadow';
 import type {LessonAnalysis, LessonSentence} from '@core/schemas/lesson';
 
 import {formatCueLabel} from '../logic/canonicalYouTubeCues';
-import {
-  normalizeIpa,
-  pairWordsWithIpa,
-  splitSentenceWords,
-} from '../logic/sentenceIpa';
+import {pairWordsWithIpa, splitSentenceWords} from '../logic/sentenceIpa';
 import type {SentenceSaveControl} from '../logic/useSavedVideoSentences';
 
 /** How much of the next card shows at the right edge. */
@@ -262,13 +258,6 @@ function SentenceCarouselCardBody({
             ))}
           </View>
           {selectedWordIndex !== null ? wordDetail : null}
-          {showIpa && !interlinear && sentence.ipa ? (
-            <View style={styles.ipaChip}>
-              <AppText style={styles.ipaText} variant="body">
-                {normalizeIpa(sentence.ipa)}
-              </AppText>
-            </View>
-          ) : null}
           {showTranslation ? (
             <View style={styles.translation}>
               <AppText color="secondary" variant="bodyLg">
@@ -510,16 +499,6 @@ function cardStyles(theme: AppTheme) {
     },
     headerSpacer: {
       flex: 1,
-    },
-    ipaChip: {
-      alignSelf: 'flex-start',
-      backgroundColor: theme.colors.accentSoft,
-      borderRadius: 12,
-      paddingHorizontal: 10,
-      paddingVertical: 6,
-    },
-    ipaText: {
-      color: theme.colors.primary,
     },
     liveDot: {
       backgroundColor: theme.colors.accent,

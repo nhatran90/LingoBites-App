@@ -543,7 +543,6 @@ export function YouTubeLessonStudy({
         onSelectSentence={handleTranscriptSelect}
         sentenceSave={sentenceSave}
         sentences={orderedSentences}
-        showIpa={showIpa}
         showTranslation={showTranslation}
         videoPlaying={videoPlaying}
         visible={openSheet === 'transcript'}

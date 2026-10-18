@@ -262,44 +262,36 @@ describe('YouTube sheets (AC-006, AC-008)', () => {
     expect(inactiveRow.props.accessibilityState?.selected).toBe(false);
   });
 
-  it('shows IPA under each transcript line only when IPA is on', async () => {
+  it('never shows a whole-sentence IPA line in the transcript', async () => {
     const sentences = snapshotWithThreeSentences().sentences;
-    const render = (showIpa: boolean) => (
-      <FeatureFlagProvider
-        releaseConfig={makeTestReleaseConfig(THEME_UI_FLAGS)}
-      >
-        <AppThemeProvider>
-          <YouTubeTranscriptSheet
-            activeIndex={0}
-            currentIndex={0}
-            onClose={jest.fn()}
-            onSelectSentence={jest.fn()}
-            sentences={sentences}
-            showIpa={showIpa}
-            showTranslation
-            videoPlaying
-            visible
-          />
-        </AppThemeProvider>
-      </FeatureFlagProvider>
-    );
     let tree!: ReactTestRenderer.ReactTestRenderer;
     await act(async () => {
-      tree = ReactTestRenderer.create(render(false));
+      tree = ReactTestRenderer.create(
+        <FeatureFlagProvider
+          releaseConfig={makeTestReleaseConfig(THEME_UI_FLAGS)}
+        >
+          <AppThemeProvider>
+            <YouTubeTranscriptSheet
+              activeIndex={0}
+              currentIndex={0}
+              onClose={jest.fn()}
+              onSelectSentence={jest.fn()}
+              sentences={sentences}
+              showTranslation
+              videoPlaying
+              visible
+            />
+          </AppThemeProvider>
+        </FeatureFlagProvider>,
+      );
     });
     expect(
       tree.root.findAll(
-        node => node.props.testID === `youtube-transcript-ipa-${S1}`,
+        node =>
+          typeof node.props.children === 'string' &&
+          node.props.children === sentences[0].ipa,
       ),
     ).toHaveLength(0);
-
-    await act(async () => {
-      tree.update(render(true));
-    });
-    const ipa = tree.root
-      .findAll(node => node.props.testID === `youtube-transcript-ipa-${S1}`)
-      .find(node => typeof node.props.children === 'string');
-    expect(ipa?.props.children).toBe(sentences[0].ipa);
   });
 
   it('saves a transcript line with ♥ without seeking to it', async () => {

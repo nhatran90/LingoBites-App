@@ -175,4 +175,16 @@ describe('YouTubeSentenceCarousel', () => {
     );
     expect(ipaNodes).toHaveLength(0);
   });
+
+  it('never falls back to a whole-sentence IPA line', async () => {
+    // "Sentence 0 en." has 3 words but its IPA has 1 token: no pairing.
+    const {tree} = await renderCarousel({showIpa: true});
+    await layoutCarousel(tree);
+    const ipaNodes = tree.root.findAll(
+      node =>
+        typeof node.props.children === 'string' &&
+        node.props.children.startsWith('ipa-'),
+    );
+    expect(ipaNodes).toHaveLength(0);
+  });
 });

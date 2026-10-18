@@ -3,12 +3,15 @@ import {useEffect, useMemo, useState} from 'react';
 import {useLearnerProfileStore} from '@features/onboarding';
 import {loadReadingRecorder} from '@features/speaking';
 
+import {useFeatureEnabled} from '@core/release';
+
 import {fetchPronunciationEnabled} from './pronunciationClient';
 
 /**
- * Pronunciation step 3: whether to offer "Luyện phát âm" at all. The Server
- * must score pronunciation, the learner must not be a kid (A11; the Server
- * refuses kids too) and the device must have a recorder. A "yes" from the
+ * Pronunciation step 3: whether to offer "Luyện phát âm" at all. The app's
+ * release flag `pronunciationSupport` and the Server must both agree, the
+ * learner must not be a kid (A11; the Server refuses kids too) and the
+ * device must have a recorder. A "yes" from the
  * Server is kept for the session, so later sheets open without waiting; a
  * "no" is asked again next time.
  */
@@ -16,6 +19,7 @@ import {fetchPronunciationEnabled} from './pronunciationClient';
 let enabledThisSession = false;
 
 export function usePronunciationAvailable(): boolean {
+  const flagOn = useFeatureEnabled('pronunciationSupport');
   const kid = useLearnerProfileStore(
     state => state.profile?.ageGroup === 'kids',
   );
@@ -32,7 +36,7 @@ export function usePronunciationAvailable(): boolean {
     return () => controller.abort();
   }, []);
 
-  return enabled && !kid && hasRecorder;
+  return flagOn && enabled && !kid && hasRecorder;
 }
 
 /** Tests only: forget the session's answer. */

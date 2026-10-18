@@ -7,7 +7,11 @@ import {resetPronunciationAvailabilityForTests} from '@features/pronunciation';
 import {AppThemeProvider} from '@ui/theme';
 
 import {getAppConfig} from '@core/api/appConfig';
-import {FeatureFlagProvider} from '@core/release';
+import {
+  FeatureFlagProvider,
+  getReleaseConfig,
+  type ReleaseConfig,
+} from '@core/release';
 
 import type {LessonPronunciationEntry} from '../../logic/lessonHubContent';
 import {LessonPronunciationSection} from '../LessonPronunciationSection';
@@ -40,11 +44,11 @@ function serverSays(enabled: boolean) {
   }));
 }
 
-async function render() {
+async function render(releaseConfig?: ReleaseConfig) {
   let tree!: ReactTestRenderer.ReactTestRenderer;
   await act(async () => {
     tree = ReactTestRenderer.create(
-      <FeatureFlagProvider>
+      <FeatureFlagProvider releaseConfig={releaseConfig}>
         <AppThemeProvider>
           <LessonPronunciationSection
             entries={[ENTRY]}
@@ -112,6 +116,16 @@ describe('LessonPronunciationSection practice', () => {
       } as never,
     });
     const tree = await render();
+    expect(find(tree, `${ID}-practice`)).toHaveLength(0);
+  });
+
+  it('hides practice when the app release turns it off', async () => {
+    serverSays(true);
+    const production = getReleaseConfig('production');
+    const tree = await render({
+      ...production,
+      features: {...production.features, pronunciationSupport: false},
+    });
     expect(find(tree, `${ID}-practice`)).toHaveLength(0);
   });
 });

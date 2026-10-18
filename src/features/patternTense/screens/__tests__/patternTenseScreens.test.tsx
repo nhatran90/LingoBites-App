@@ -1,4 +1,7 @@
+import {StyleSheet} from 'react-native';
 import {act} from 'react-test-renderer';
+
+import {HERO_PALETTE} from '@ui/theme/heroPalette';
 
 import {mockAppNavigation} from '@test/support/appNavigationMock';
 import {catalogItem} from '@test/support/catalogItemFixture';
@@ -188,6 +191,17 @@ test('the tense map places tenses, colours them by memory and opens one', () => 
   expect(has(tree, 'tense-cell-grammar:past-simple-level')).toBe(true);
   expect(has(tree, 'tense-cell-grammar:present-perfect-level')).toBe(false);
   expect(has(tree, 'tense-time-past')).toBe(true);
+  // Tiles are framed in their time's colour: past in sun, present in mint.
+  const frameOf = (code: string) =>
+    StyleSheet.flatten(
+      tree.root.findAll(
+        node =>
+          node.props.testID === `tense-cell-${code}-face` &&
+          node.props.style !== undefined,
+      )[0]!.props.style,
+    ).borderColor;
+  expect(frameOf('grammar:past-simple')).toBe(HERO_PALETTE.sun);
+  expect(frameOf('grammar:present-perfect')).toBe(HERO_PALETTE.faceFrom);
   expect(has(tree, 'tense-map-legend')).toBe(true);
   expect(has(tree, 'tense-cell-grammar:be-going-to')).toBe(true);
   press(tree, 'tense-cell-grammar:present-perfect');

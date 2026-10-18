@@ -10,6 +10,7 @@ import {
 
 import {AppButton} from '@ui/components/AppButton';
 import {AppText} from '@ui/components/AppText';
+import {withAlpha} from '@ui/components/layout';
 import {MaterialIcon} from '@ui/components/MaterialIcon';
 import {type HandoffIconName} from '@ui/icons/iconRegistry';
 import {type AppTheme, useAppTheme} from '@ui/theme';
@@ -64,6 +65,26 @@ function groupBadge(theme: AppTheme, group: Group) {
   return badges[group];
 }
 
+/**
+ * The frame of a group's tiles: a thin bright frame in the time's colour on
+ * a deeper bottom edge of the same hue. Like the hero cards, these keep their
+ * colours in every theme.
+ */
+const GROUP_FRAMES: Record<Group, {frame: string; edge: string}> = {
+  past: {frame: HERO_PALETTE.sun, edge: HERO_PALETTE.sunShelf},
+  present: {frame: HERO_PALETTE.faceFrom, edge: HERO_PALETTE.shelf},
+  future: {frame: HERO_PALETTE.coral, edge: HERO_PALETTE.coralShelf},
+  other: {frame: HERO_PALETTE.faceFrom, edge: HERO_PALETTE.shelf},
+};
+
+/** The progress card's edge: a beige a step deeper than `surfaceHigh`, so it shows on the page. */
+function cardEdge(theme: AppTheme): string {
+  return solidOver(
+    withAlpha(theme.colors.onTertiaryContainer, 0.14),
+    theme.colors.surfaceHigh,
+  );
+}
+
 function GroupHead({
   group,
   title,
@@ -88,17 +109,22 @@ function GroupHead({
 }
 
 type TileProps = {
+  group: Group;
   tense: LibraryTense;
   level: MemoryLevel;
   onPress: () => void;
 };
 
-/** One tense: its picture as the face, the names in white over the scrim. */
-function TenseTile({tense, level, onPress}: TileProps) {
+/**
+ * One tense: its picture as the face, the names in white over the scrim,
+ * framed in its group's colour. How well it is remembered is the chip.
+ */
+function TenseTile({group, tense, level, onPress}: TileProps) {
   const {t} = useTranslation();
   const {theme} = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const chip = levelChip(theme, level);
+  const frame = GROUP_FRAMES[group];
   const code = tense.item.code;
   return (
     <Pressable
@@ -108,13 +134,17 @@ function TenseTile({tense, level, onPress}: TileProps) {
       onPress={onPress}
       style={({pressed}) => [
         styles.tile,
-        getStickerEdge(pressed ? 1 : 4, chip.edge),
+        {backgroundColor: frame.edge},
+        getStickerEdge(pressed ? 1 : 4, frame.edge),
         pressed ? styles.pressed : null,
       ]}
       testID={`tense-cell-${code}`}
     >
-      {/* The face clips the picture; the tile itself keeps its edge (an iOS shadow is clipped too). */}
-      <View style={styles.tileFace}>
+      {/* The face clips the picture and draws the frame; the tile itself keeps its edge (an iOS shadow is clipped too, and on Android the edge is the tile's own border). */}
+      <View
+        style={[styles.tileFace, {borderColor: frame.frame}]}
+        testID={`tense-cell-${code}-face`}
+      >
         <TenseThumb
           iconSize={40}
           id={`tense-tile-${code}`}
@@ -142,10 +172,12 @@ function TenseTile({tense, level, onPress}: TileProps) {
 
 /** Two tiles a row; an odd one out keeps its half width. */
 function TileGrid({
+  group,
   tenses,
   levelOf,
   onOpen,
 }: {
+  group: Group;
   tenses: Array<LibraryTense | null>;
   levelOf: (tense: LibraryTense) => MemoryLevel;
   onOpen: (tense: LibraryTense) => void;
@@ -163,6 +195,7 @@ function TileGrid({
           {row.map((tense, column) =>
             tense ? (
               <TenseTile
+                group={group}
                 key={tense.item.code}
                 level={levelOf(tense)}
                 onPress={() => onOpen(tense)}
@@ -293,7 +326,12 @@ export function TenseMapView() {
               group={time}
               title={t(`patternTense.time_${time}`)}
             />
-            <TileGrid levelOf={levelOf} onOpen={open} tenses={cells} />
+            <TileGrid
+              group={time}
+              levelOf={levelOf}
+              onOpen={open}
+              tenses={cells}
+            />
           </View>
         );
       })}
@@ -301,7 +339,12 @@ export function TenseMapView() {
       {grid.others.length > 0 ? (
         <View style={styles.section}>
           <GroupHead group="other" title={t('patternTense.other_tenses')} />
-          <TileGrid levelOf={levelOf} onOpen={open} tenses={grid.others} />
+          <TileGrid
+            group="other"
+            levelOf={levelOf}
+            onOpen={open}
+            tenses={grid.others}
+          />
         </View>
       ) : null}
     </ScrollView>
@@ -316,7 +359,7 @@ function makeStyles(theme: AppTheme) {
       borderRadius: 26,
       gap: 10,
       padding: theme.spacing.lg,
-      ...getStickerEdge(4, colors.surfaceHigh),
+      ...getStickerEdge(3, cardEdge(theme)),
     },
     chip: {
       alignItems: 'center',
@@ -438,12 +481,13 @@ function makeStyles(theme: AppTheme) {
       width: 12,
     },
     tile: {
-      backgroundColor: HERO_PALETTE.ink,
       borderRadius: 20,
       flex: 1,
     },
     tileFace: {
+      backgroundColor: HERO_PALETTE.ink,
       borderRadius: 20,
+      borderWidth: 2,
       flex: 1,
       gap: 2,
       justifyContent: 'flex-end',

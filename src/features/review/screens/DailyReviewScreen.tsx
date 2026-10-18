@@ -412,7 +412,15 @@ export function DailyReviewScreen({
           ) : null}
           <AppButton
             accessibilityLabel={t('review.back_to_home_a11y')}
-            onPress={() => navigation?.popToTop?.() ?? navigation?.goBack?.()}
+            onPress={() => {
+              // popToTop returns void, so `??` would always also call goBack
+              // and fire an unhandled GO_BACK once we're already at the root.
+              if (navigation?.popToTop) {
+                navigation.popToTop();
+              } else {
+                navigation?.goBack?.();
+              }
+            }}
             title={t('review.back_to_home')}
           />
         </ScrollView>

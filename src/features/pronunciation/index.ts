@@ -30,3 +30,12 @@ export {
   wordMark,
 } from './logic/scoreBands';
 export type {ScoreBand, WordMark} from './logic/scoreBands';
+export {
+  resetPronunciationAvailabilityForTests,
+  usePronunciationAvailable,
+} from './logic/usePronunciationAvailable';
+export {PronunciationPracticeSheet} from './components/PronunciationPracticeSheet';
+export type {
+  PracticeItem,
+  PronunciationPracticeSheetProps,
+} from './components/PronunciationPracticeSheet';

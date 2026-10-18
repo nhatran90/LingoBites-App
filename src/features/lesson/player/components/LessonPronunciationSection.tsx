@@ -1,7 +1,14 @@
-import React, {useMemo} from 'react';
+import React, {useMemo, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Pressable, StyleSheet, View} from 'react-native';
 
+import {
+  type PracticeItem,
+  PronunciationPracticeSheet,
+  usePronunciationAvailable,
+} from '@features/pronunciation';
+
+import {AppButton} from '@ui/components/AppButton';
 import {AppText} from '@ui/components/AppText';
 import {MaterialIcon} from '@ui/components/MaterialIcon';
 import {type AppTheme, useAppTheme} from '@ui/theme';
@@ -23,8 +30,9 @@ export type LessonPronunciationSectionProps = {
 /**
  * "Phát âm": per point, the focus sound in a big tile, a Vietnamese tip,
  * minimal pairs as two tiles to tap and hear, and a listen-and-choose quiz
- * on those pairs. Nothing here records the learner; speaking is scored by
- * the lesson flow player later.
+ * on those pairs. Pronunciation step 3: where the Server scores
+ * pronunciation, "Luyện phát âm" opens a sheet to record the item and see
+ * its scores word by word.
  */
 export function LessonPronunciationSection({
   entries,
@@ -33,6 +41,8 @@ export function LessonPronunciationSection({
   const {theme} = useAppTheme();
   const {t} = useTranslation();
   const styles = useMemo(() => makeStyles(theme), [theme]);
+  const canPractise = usePronunciationAvailable();
+  const [practising, setPractising] = useState<PracticeItem | null>(null);
   if (entries.length === 0) {
     return (
       <View testID="lesson-pronunciation-empty" style={styles.empty}>
@@ -115,6 +125,21 @@ export function LessonPronunciationSection({
               ) : null}
             </View>
 
+            {canPractise ? (
+              <AppButton
+                accessibilityHint={t('pronunciation.practice_hint', {
+                  text: entry.text,
+                })}
+                iconLeft="mic"
+                onPress={() =>
+                  setPractising({itemId: entry.itemId, text: entry.text})
+                }
+                testID={`${testID}-practice`}
+                title={t('pronunciation.practice_button')}
+                variant="secondary"
+              />
+            ) : null}
+
             <View style={styles.tip}>
               <MaterialIcon
                 color={theme.colors.onTertiaryContainer}
@@ -182,6 +207,11 @@ export function LessonPronunciationSection({
           </View>
         );
       })}
+      <PronunciationPracticeSheet
+        item={practising}
+        onClose={() => setPractising(null)}
+        onSpeakText={onSpeakText}
+      />
     </View>
   );
 }

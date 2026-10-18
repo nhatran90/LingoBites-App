@@ -112,6 +112,7 @@ export {
   applyEvaluationConsent,
   SpeechGradingSettingsRow,
 } from './components/SpeechGradingSettingsRow';
+export {PronunciationSettingsRow} from './components/PronunciationSettingsRow';
 export type {
   SaveShadowingAttemptInput,
   SaveShadowingAttemptResult,

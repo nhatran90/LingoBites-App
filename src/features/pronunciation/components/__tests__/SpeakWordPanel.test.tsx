@@ -7,7 +7,6 @@ import type {ReadingRecorder} from '@features/speaking';
 import {AppThemeProvider} from '@ui/theme';
 
 import {FeatureFlagProvider} from '@core/release';
-
 import type {PronunciationAttempt} from '@core/schemas/pronunciation';
 
 import type {FetchReadingResult} from '../../logic/pronunciationClient';

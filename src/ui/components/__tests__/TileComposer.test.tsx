@@ -1,5 +1,8 @@
 import React, {useState} from 'react';
+import {StyleSheet} from 'react-native';
 import {act} from 'react-test-renderer';
+
+import {type AppTheme, useAppTheme} from '@ui/theme';
 
 import {byTestId, press, renderWithTheme} from '@test/support/lessonFlow';
 
@@ -12,6 +15,12 @@ import {
 type Harness = Partial<TileComposerProps> & {initialMode?: TileMode};
 
 let latest = '';
+let activeTheme!: AppTheme;
+
+function ThemeProbe() {
+  activeTheme = useAppTheme().theme;
+  return null;
+}
 
 function Composer({initialMode = 'letters', ...props}: Harness) {
   const [value, setValue] = useState('');
@@ -31,7 +40,19 @@ function Composer({initialMode = 'letters', ...props}: Harness) {
 }
 
 function render(props: Harness = {}) {
-  return renderWithTheme(<Composer {...props} />);
+  return renderWithTheme(
+    <>
+      <ThemeProbe />
+      <Composer {...props} />
+    </>,
+  );
+}
+
+function stageStyle(tree: ReturnType<typeof render>) {
+  const stage = byTestId(tree, 'composer-stage').find(
+    node => node.props.style !== undefined,
+  );
+  return StyleSheet.flatten(stage?.props.style);
 }
 
 describe('TileComposer', () => {
@@ -112,5 +133,13 @@ describe('TileComposer', () => {
     const tree = render({answer: null, initialMode: 'letters'});
     expect(byTestId(tree, 'composer-mode-words')).toHaveLength(0);
     expect(byTestId(tree, 'composer-key-z').length).toBeGreaterThan(0);
+  });
+
+  it("marks a right answer in the theme's right colors, not the coral ones", () => {
+    const right = stageStyle(render({status: 'right', editable: false}));
+    expect(right.borderColor).toBe(activeTheme.colors.primary);
+    expect(right.backgroundColor).toBe(activeTheme.colors.accentSoft);
+    const wrong = stageStyle(render({status: 'wrong', editable: false}));
+    expect(wrong.borderColor).toBe(activeTheme.colors.danger);
   });
 });

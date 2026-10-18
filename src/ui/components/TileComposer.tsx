@@ -563,8 +563,8 @@ function makeStyles(theme: AppTheme) {
     stageFilled: {borderColor: colors.accentSoft, borderStyle: 'solid'},
     stageHint: {bottom: spacing.sm, position: 'absolute'},
     stageRight: {
-      backgroundColor: colors.secondarySoft,
-      borderColor: colors.secondaryContainer,
+      backgroundColor: colors.accentSoft,
+      borderColor: colors.primary,
       borderStyle: 'solid',
     },
     stageText: {

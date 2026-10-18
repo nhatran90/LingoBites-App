@@ -3,7 +3,14 @@
  * câu, Nghe hiểu, Phát âm, Ngữ pháp): the page layout with its bottom
  * buttons, the progress strip and the bookmark toggle.
  */
-import React, {useEffect, useMemo, useRef} from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {Pressable, ScrollView, StyleSheet, View} from 'react-native';
 
 import {ActionIconButton} from '@ui/components/ActionIconButton';
@@ -25,11 +32,23 @@ type StudyPageProps = {
   testID?: string;
 };
 
+/**
+ * Stops the study page from scrolling while true, e.g. while a card is being
+ * dragged sideways: on iOS the page's native scroll keeps going under a JS
+ * drag unless it is switched off. Outside a study page it does nothing.
+ */
+const ScrollLockContext = createContext<(locked: boolean) => void>(() => {});
+
+export function useStudyScrollLock(): (locked: boolean) => void {
+  return useContext(ScrollLockContext);
+}
+
 /** A study page: its own scroll area over a fixed row of buttons. */
 export function StudyPage({pageKey, children, footer, testID}: StudyPageProps) {
   const {theme} = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const scrollRef = useRef<ScrollView>(null);
+  const [scrollLocked, setScrollLocked] = useState(false);
   useEffect(() => {
     scrollRef.current?.scrollTo?.({y: 0, animated: false});
   }, [pageKey]);
@@ -38,10 +57,13 @@ export function StudyPage({pageKey, children, footer, testID}: StudyPageProps) {
       <ScrollView
         contentContainerStyle={styles.content}
         ref={scrollRef}
+        scrollEnabled={!scrollLocked}
         showsVerticalScrollIndicator={false}
         style={styles.page}
       >
-        {children}
+        <ScrollLockContext.Provider value={setScrollLocked}>
+          {children}
+        </ScrollLockContext.Provider>
       </ScrollView>
       <BottomActionBar style={styles.footer}>{footer}</BottomActionBar>
     </View>

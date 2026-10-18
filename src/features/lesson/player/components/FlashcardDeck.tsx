@@ -1,12 +1,20 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {Animated, Pressable, StyleSheet, View} from 'react-native';
+import {
+  Animated,
+  type LayoutChangeEvent,
+  Pressable,
+  StyleSheet,
+  View,
+} from 'react-native';
 import {useReducedMotion} from 'react-native-reanimated';
 
 import {AppText} from '@ui/components/AppText';
+import {withAlpha} from '@ui/components/layout';
 import {MaterialIcon} from '@ui/components/MaterialIcon';
 import {cardColors} from '@ui/components/ToneCard';
 import {type AppTheme, useAppTheme} from '@ui/theme';
+import {solidOver} from '@ui/theme/colorUtils';
 import {getStickerEdge} from '@ui/theme/hardShadow';
 
 import {studyCardStyle, StudyLabel} from './StudyControls';
@@ -15,6 +23,10 @@ import {SwipeCard} from './SwipeCard';
 export const FLASHCARD_HEIGHT = 340;
 /** How far each card behind the top one peeks out. */
 const PEEK = 10;
+/** How much narrower each card behind is, on each side. */
+const SHEET_INSET = 10;
+/** The card's raised edge, the same height on both faces. */
+const CARD_EDGE = 6;
 /** Drag distance at which the card below has fully come up. */
 const LIFT_DISTANCE = 140;
 
@@ -117,12 +129,8 @@ export function Flashcard({
           pointerEvents="none"
           style={styles.tapHint}
         >
-          <MaterialIcon
-            color={theme.colors.text.muted}
-            name="chevron_right"
-            size={16}
-          />
-          <AppText color="muted" style={styles.tapText}>
+          <MaterialIcon color={theme.colors.primary} name="refresh" size={16} />
+          <AppText style={styles.tapText}>
             {t('lessonPlayer.flashcard_flip_hint')}
           </AppText>
         </View>
@@ -133,7 +141,10 @@ export function Flashcard({
         pointerEvents={flipped ? 'box-none' : 'none'}
         style={[
           styles.face,
-          {backgroundColor: back.face, ...getStickerEdge(6, back.shelf)},
+          {
+            backgroundColor: back.face,
+            ...getStickerEdge(CARD_EDGE, back.shelf),
+          },
           face('180deg', '360deg', false),
         ]}
         testID={`${testID}-back`}
@@ -238,6 +249,10 @@ export function FlashcardDeck({
   const {theme} = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const drag = useRef(new Animated.Value(0)).current;
+  // The cards behind are drawn narrower by scaling, so the scale needs the width.
+  const [width, setWidth] = useState(0);
+  const narrow = (depth: number) =>
+    width > 0 ? (width - 2 * SHEET_INSET * depth) / width : 1 - 0.06 * depth;
   /** 1 while dragging towards the next card, -1 towards the previous one. */
   const [direction, setDirection] = useState<1 | -1>(1);
   useEffect(() => {
@@ -258,11 +273,21 @@ export function FlashcardDeck({
     outputRange: [1, 0, 1],
     extrapolate: 'clamp',
   });
+  // Solid at rest; only the last card hides its spare one until dragged.
+  const underOpacity = lift.interpolate({
+    inputRange: [0, 0.01, 1],
+    outputRange: [behind > 0 ? 1 : 0, 1, 1],
+  });
   // Even the last card keeps one card under it, to come up when going back.
   const layers = Math.max(behind, index > 0 ? 1 : 0);
 
   return (
-    <View style={[styles.deck, {height: FLASHCARD_HEIGHT + behind * PEEK}]}>
+    <View
+      onLayout={(event: LayoutChangeEvent) =>
+        setWidth(event.nativeEvent.layout.width)
+      }
+      style={[styles.deck, {height: FLASHCARD_HEIGHT + behind * PEEK}]}
+    >
       {Array.from({length: layers}, (_, k) => layers - k).map(depth =>
         depth === 1 ? (
           <Animated.View
@@ -271,10 +296,7 @@ export function FlashcardDeck({
             style={[
               styles.behind,
               {
-                opacity: lift.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [behind > 0 ? 0.75 : 0, 1],
-                }),
+                opacity: underOpacity,
                 transform: [
                   {
                     translateY: lift.interpolate({
@@ -283,9 +305,9 @@ export function FlashcardDeck({
                     }),
                   },
                   {
-                    scale: lift.interpolate({
+                    scaleX: lift.interpolate({
                       inputRange: [0, 1],
-                      outputRange: [0.95, 1],
+                      outputRange: [narrow(1), 1],
                     }),
                   },
                 ],
@@ -300,11 +322,11 @@ export function FlashcardDeck({
             key={depth}
             style={[
               styles.behind,
+              styles.behindDeep,
               {
-                opacity: 1 - depth * 0.25,
                 transform: [
                   {translateY: depth * PEEK},
-                  {scale: 1 - depth * 0.05},
+                  {scaleX: narrow(depth)},
                 ],
               },
             ]}
@@ -326,21 +348,43 @@ export function FlashcardDeck({
   );
 }
 
+/**
+ * The white face's border and raised edge: the page's warm neutral, a step
+ * darker for the edge, so a white card stands off a cream page. Drawn on
+ * every theme, like the back face's edge.
+ */
+function frontSurface(theme: AppTheme, background: string) {
+  const line = theme.colors.surfaceHigh;
+  const shelf = solidOver(withAlpha(theme.colors.ink, 0.12), line);
+  return {
+    backgroundColor: background,
+    borderRadius: 28,
+    borderWidth: 1.5,
+    borderColor: line,
+    ...getStickerEdge(CARD_EDGE, shelf),
+    // Android draws the edge as a bottom border; keep the other sides thin.
+    borderTopColor: line,
+    borderLeftColor: line,
+    borderRightColor: line,
+  } as const;
+}
+
 function makeStyles(theme: AppTheme) {
   return StyleSheet.create({
     deck: {
       position: 'relative',
     },
     behind: {
-      ...studyCardStyle(theme),
-      borderRadius: 28,
+      ...frontSurface(theme, theme.colors.surface),
       height: FLASHCARD_HEIGHT,
       left: 0,
       padding: 16,
       position: 'absolute',
       right: 0,
       top: 0,
-      transformOrigin: 'bottom',
+    },
+    behindDeep: {
+      backgroundColor: theme.colors.surfaceLow,
     },
     top: {
       height: FLASHCARD_HEIGHT,
@@ -360,6 +404,7 @@ function makeStyles(theme: AppTheme) {
       top: 0,
     },
     front: {
+      ...frontSurface(theme, theme.colors.surface),
       alignItems: 'center',
     },
     bar: {
@@ -390,10 +435,15 @@ function makeStyles(theme: AppTheme) {
     },
     tapHint: {
       alignItems: 'center',
+      backgroundColor: theme.colors.surfaceMuted,
+      borderRadius: theme.radius.pill,
       flexDirection: 'row',
-      gap: 4,
+      gap: 6,
+      paddingHorizontal: 14,
+      paddingVertical: 7,
     },
     tapText: {
+      color: theme.colors.primary,
       fontSize: 12.5,
       fontWeight: '700',
     },

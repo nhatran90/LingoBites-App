@@ -4,6 +4,7 @@ import {Pressable, ScrollView, StyleSheet, View} from 'react-native';
 
 import {SpeechNotice, useSpeak} from '@features/audio';
 import {listComboSentenceSetsFor} from '@features/combo';
+import {startReviewSession} from '@features/engagement';
 import {requestSync} from '@features/sync';
 
 import {ActionIconButton} from '@ui/components/ActionIconButton';
@@ -23,12 +24,17 @@ import {lapsesOf} from '@core/sync/learningOutcomes';
 
 import {ApplyExerciseCard} from '../components/ApplyExerciseCard';
 import {
+  type ItemReviewResult,
+  ItemReviewSummary,
+} from '../components/ItemReviewSummary';
+import {
   type ApplyExercise,
   type ApplySentence,
   buildApplyExercise,
   seedOf,
 } from '../logic/applyExercise';
 import {
+  type DueItem,
   type ItemReviewQueue,
   itemReviewQueue,
   recordItemReview,
@@ -88,17 +94,23 @@ export function ItemReviewScreen({navigation, queue: given}: Props) {
   const themedStyles = useMemo(() => makeStyles(theme), [theme]);
   const [queue] = useState(() => given ?? readQueue());
   const [sessionId] = useState(createRequestId);
+  // Gamification for the scheduled round (XP, streak); practice rounds earn none.
+  const [session] = useState(startReviewSession);
+  const [xpEarned, setXpEarned] = useState<number | null>(null);
+  // "Ôn lại": the forgotten items once more, practice only (not sent to the schedule).
+  const [practice, setPractice] = useState<DueItem[] | null>(null);
+  const items = practice ?? queue.items;
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
   // "Viết từ": write the word before recalling (practice only).
   const [writing, setWriting] = useState(false);
   const [shownAt, setShownAt] = useState(() => Date.now());
-  const [tally, setTally] = useState({correct: 0, incorrect: 0});
+  const [results, setResults] = useState<ItemReviewResult[]>([]);
   const [failed, setFailed] = useState(false);
   const [compared, setCompared] = useState(false);
   const [chosen, setChosen] = useState<number | null>(null);
   const {speak: say, notice: speechNotice} = useSpeak();
-  const current = queue.items[index];
+  const current = items[index];
   const recognition =
     current !== undefined && current.memory.stage < RECALL_FROM_STAGE;
   const lapses = current ? lapsesFor(current.item.code) : 0;
@@ -121,7 +133,13 @@ export function ItemReviewScreen({navigation, queue: given}: Props) {
   }, [current, index]);
   const recall = !recognition && exercise === null;
 
+  const finishSession = () => {
+    const outcome = session.finish();
+    if (outcome?.ok) setXpEarned(outcome.xpEarned);
+  };
+
   const advance = () => {
+    if (!practice && index + 1 >= items.length) finishSession();
     setIndex(value => value + 1);
     setRevealed(false);
     setWriting(false);
@@ -130,40 +148,75 @@ export function ItemReviewScreen({navigation, queue: given}: Props) {
     setShownAt(Date.now());
   };
 
-  const answer = (result: 'correct' | 'incorrect') => {
-    if (!current) return;
-    const ok = recordItemReview({
-      itemCode: current.item.code,
-      result,
-      sessionId,
-      durationMs: Math.min(Date.now() - shownAt, 3_600_000),
-    });
-    if (!ok) {
-      setFailed(true);
-      return;
+  /** Saves the answer (a practice round only counts it); false when it could not be saved. */
+  const save = (entry: DueItem, result: 'correct' | 'incorrect'): boolean => {
+    if (!practice) {
+      const now = new Date();
+      const ok = recordItemReview({
+        itemCode: entry.item.code,
+        result,
+        sessionId,
+        durationMs: Math.min(now.getTime() - shownAt, 3_600_000),
+        now,
+      });
+      if (!ok) {
+        setFailed(true);
+        return false;
+      }
+      session.record({
+        flashcardId: entry.item.code,
+        rating: result === 'correct' ? 'remembered' : 'forgot',
+        dueAt: entry.memory.dueAt,
+        reviewedAt: now.toISOString(),
+      });
     }
     setFailed(false);
-    setTally(value => ({...value, [result]: value[result] + 1}));
+    setResults(value => [
+      ...value,
+      {
+        code: entry.item.code,
+        text: entry.item.text,
+        meaning: entry.item.meaning_vi,
+        result,
+      },
+    ]);
+    return true;
+  };
+
+  const answer = (result: 'correct' | 'incorrect') => {
+    if (!current || !save(current, result)) return;
     advance();
-    requestSync();
+    if (!practice) requestSync();
   };
 
   // Recognition and stage 3: the answer is recorded at once and the next card waits for "Next".
   const recordChecked = (result: 'correct' | 'incorrect') => {
-    if (!current) return;
-    const ok = recordItemReview({
-      itemCode: current.item.code,
-      result,
-      sessionId,
-      durationMs: Math.min(Date.now() - shownAt, 3_600_000),
-    });
-    if (!ok) {
-      setFailed(true);
-      return;
-    }
-    setFailed(false);
-    setTally(value => ({...value, [result]: value[result] + 1}));
-    requestSync();
+    if (!current || !save(current, result)) return;
+    if (!practice) requestSync();
+  };
+
+  const forgotten = items.filter(entry =>
+    results.some(
+      done => done.code === entry.item.code && done.result === 'incorrect',
+    ),
+  );
+
+  const practiseForgotten = () => {
+    setPractice(forgotten);
+    setResults([]);
+    setXpEarned(null);
+    setIndex(0);
+    setRevealed(false);
+    setWriting(false);
+    setChosen(null);
+    setCompared(false);
+    setShownAt(Date.now());
+  };
+
+  const leave = () => {
+    // Leaving after answering at least one item still closes the session.
+    finishSession();
+    navigation?.goBack?.();
   };
 
   const pickOption = (option: number) => {
@@ -172,14 +225,15 @@ export function ItemReviewScreen({navigation, queue: given}: Props) {
     recordChecked(option === question.answerIndex ? 'correct' : 'incorrect');
   };
 
-  const total = queue.items.length;
+  const total = items.length;
   return (
     <AppScreen>
       <SessionHeader
         closeHint={t('itemReview.back_hint')}
         closeLabel={t('itemReview.back')}
+        complete={!current}
         current={current ? index + 1 : total}
-        onClose={() => navigation?.goBack?.()}
+        onClose={leave}
         progressLabel={
           current
             ? t('itemReview.progress', {current: index + 1, total})
@@ -306,18 +360,9 @@ export function ItemReviewScreen({navigation, queue: given}: Props) {
             ) : null}
           </AppCard>
         ) : null}
-        {!current ? (
+        {!current && total === 0 ? (
           <AppCard testID="item-review-done">
-            <AppText variant="h3">
-              {queue.items.length === 0
-                ? t('itemReview.empty')
-                : t('itemReview.done')}
-            </AppText>
-            {queue.items.length > 0 ? (
-              <AppText color="secondary" testID="item-review-summary">
-                {t('itemReview.summary', tally)}
-              </AppText>
-            ) : null}
+            <AppText variant="h3">{t('itemReview.empty')}</AppText>
             <AppButton
               accessibilityHint={t('itemReview.back_hint')}
               onPress={() => navigation?.goBack?.()}
@@ -327,7 +372,37 @@ export function ItemReviewScreen({navigation, queue: given}: Props) {
             />
           </AppCard>
         ) : null}
+        {!current && total > 0 ? (
+          <ItemReviewSummary
+            practice={practice !== null}
+            results={results}
+            xpEarned={xpEarned}
+          />
+        ) : null}
       </ScrollView>
+      {!current && total > 0 ? (
+        <View style={themedStyles.doneFooter}>
+          {forgotten.length > 0 ? (
+            <AppButton
+              accessibilityHint={t('itemReview.practice_again_hint')}
+              iconLeft="replay"
+              onPress={practiseForgotten}
+              testID="item-review-practice"
+              title={t('itemReview.practice_again', {
+                count: forgotten.length,
+              })}
+              variant="outline"
+            />
+          ) : null}
+          <AppButton
+            accessibilityHint={t('itemReview.back_hint')}
+            onPress={() => navigation?.goBack?.()}
+            testID="item-review-back"
+            title={t('itemReview.finish')}
+            variant="deep"
+          />
+        </View>
+      ) : null}
       {current && !showCompare && recognition && chosen !== null ? (
         <View style={themedStyles.footer}>
           <AppButton
@@ -351,6 +426,12 @@ function makeStyles(theme: AppTheme) {
     },
     flex: {
       flex: 1,
+    },
+    doneFooter: {
+      gap: theme.spacing.sm,
+      paddingBottom: theme.spacing.md,
+      paddingHorizontal: theme.spacing.md,
+      paddingTop: theme.spacing.sm,
     },
     footer: {
       paddingBottom: theme.spacing.md,

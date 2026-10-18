@@ -227,6 +227,93 @@ export function listLessonDownloadKinds(
   return kinds;
 }
 
+/** What a lesson card shows about a download, without its snapshot body. */
+export type LessonDownloadCard = {
+  lessonId: string;
+  downloadedAt: string;
+  title: string;
+  description: string;
+  origin: LessonSnapshot['origin'];
+  sourceType: LessonSnapshot['source_type'];
+  generated: boolean;
+  unit: LessonSnapshot['unit'];
+  sentenceCount: number;
+  activityCount: number;
+  youtubeVideoId: string | null;
+  youtubeDurationMs: number | null;
+};
+
+type LessonDownloadCardRow = {
+  lesson_id: string;
+  downloaded_at: string;
+  title: string | null;
+  description: string | null;
+  origin: string | null;
+  source_type: string | null;
+  generated: number | null;
+  unit_json: string | null;
+  sentence_count: number | null;
+  activity_count: number | null;
+  youtube_video_id: string | null;
+  youtube_duration_ms: number | null;
+};
+
+/**
+ * The card fields of every download, oldest first (the order of
+ * `listDownloadedLessonSummaries`), read inside SQLite: listing the Library's
+ * cards never parses or validates the snapshot bodies on the JS thread.
+ * Rows whose body is not JSON or names another lesson are skipped.
+ */
+export function listLessonDownloadCards(
+  db: DatabaseConnection = getDatabase(),
+): LessonDownloadCard[] {
+  const result = db.execute(
+    `SELECT d.lesson_id, d.downloaded_at,
+            json_extract(d.snapshot_json, '$.lesson.title') AS title,
+            json_extract(d.snapshot_json, '$.lesson.description') AS description,
+            json_extract(d.snapshot_json, '$.lesson.origin') AS origin,
+            json_extract(d.snapshot_json, '$.lesson.source_type') AS source_type,
+            json_extract(d.snapshot_json, '$.lesson.generated') AS generated,
+            json_extract(d.snapshot_json, '$.lesson.unit') AS unit_json,
+            json_array_length(d.snapshot_json, '$.lesson.sentences')
+              AS sentence_count,
+            (SELECT count(*)
+               FROM json_each(d.snapshot_json, '$.lesson.blocks')
+              WHERE json_extract(value, '$.type') = 'activity')
+              AS activity_count,
+            json_extract(d.snapshot_json, '$.lesson.youtube.video_id')
+              AS youtube_video_id,
+            json_extract(d.snapshot_json, '$.lesson.youtube.duration_ms')
+              AS youtube_duration_ms
+       FROM lesson_downloads d
+      WHERE json_valid(d.snapshot_json)
+        AND json_extract(d.snapshot_json, '$.lesson.id') = d.lesson_id
+      ORDER BY d.downloaded_at ASC;`,
+  );
+  const cards: LessonDownloadCard[] = [];
+  for (let index = 0; index < (result.rows?.length ?? 0); index += 1) {
+    const row = result.rows?.item(index) as LessonDownloadCardRow | undefined;
+    if (!row || !row.origin || !row.source_type) continue;
+    cards.push({
+      lessonId: row.lesson_id,
+      downloadedAt: row.downloaded_at,
+      title: row.title ?? '',
+      description: row.description ?? '',
+      origin: row.origin as LessonDownloadCard['origin'],
+      sourceType: row.source_type as LessonDownloadCard['sourceType'],
+      generated: row.generated === 1,
+      unit: row.unit_json
+        ? (JSON.parse(row.unit_json) as LessonDownloadCard['unit'])
+        : null,
+      sentenceCount: row.sentence_count ?? 0,
+      activityCount: row.activity_count ?? 0,
+      youtubeVideoId: row.youtube_video_id,
+      youtubeDurationMs: row.youtube_duration_ms,
+    });
+  }
+  return cards;
+}
+
 export type SaveLessonSnapshotInput = {
   /** Raw `GET /api/v1/lessons/:id` body; validated before any write. */
   body: unknown;

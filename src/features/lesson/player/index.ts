@@ -84,6 +84,7 @@ export {
   InvalidLessonSnapshotError,
   lessonMediaDirFor,
   lessonMediaSizeBytes,
+  listLessonDownloadCards,
   listLessonDownloadKinds,
   listLessonDownloads,
   listLessonMediaDownloads,
@@ -96,6 +97,7 @@ export {
   LESSON_MEDIA_ROOT_SEGMENT,
 } from './logic/canonicalDownloadRepository';
 export type {
+  LessonDownloadCard,
   LessonDownloadKind,
   LessonDownloadRecord,
   LessonMediaDownload,

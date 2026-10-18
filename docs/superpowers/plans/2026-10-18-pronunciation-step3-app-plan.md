@@ -64,6 +64,11 @@ Mỗi PR chạy được, test xanh, nút luyện vẫn ẩn cho tới PR 3.3.
 
 ### PR 3.1: Dữ liệu, đồng ý, client
 
+> **Đã làm** (2026-10-18, App `1d49020`). Khác bảng dưới:
+> - `submitReading` nhận file đã đọc sẵn (kích thước, sha256, nội dung) thay vì tự đọc file: việc đọc file nằm ở hook (PR 3.2), client không chạm hệ thống file.
+> - `fetchPronunciationEnabled` chưa nhớ kết quả trong phiên; việc nhớ đặt ở hook giao diện (PR 3.3), giống `useYouTubeCapability`.
+> - Client của speaking giữ nguyên cách phân loại lỗi chung (404 khi tạo là "thử lại được" cho hàng đợi); client phát âm tự phân loại theo mã lỗi của server.
+
 | File | Việc |
 |---|---|
 | `src/core/schemas/pronunciation.ts` (mới) | Zod cho response `GET /v1/pronunciation/attempts/:id` và `capabilities.pronunciation`. |

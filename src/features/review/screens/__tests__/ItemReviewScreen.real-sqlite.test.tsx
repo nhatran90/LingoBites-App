@@ -6,7 +6,13 @@ import {runMigrations} from '@core/db/migrations';
 import {CatalogItemSchema} from '@core/schemas/lesson';
 
 import {openRealSqlite} from '@test/support/adversarial/realSqlite';
-import {has, press, renderWithTheme, textOf} from '@test/support/lessonFlow';
+import {
+  byTestId,
+  has,
+  press,
+  renderWithTheme,
+  textOf,
+} from '@test/support/lessonFlow';
 
 import type {ItemReviewQueue} from '../../logic/itemReview';
 import {ItemReviewScreen} from '../ItemReviewScreen';
@@ -97,7 +103,11 @@ it('walks through the items and records each answer', () => {
   expect(textOf(tree, 'item-review-meaning')).toBe('Chạm để xem nghĩa');
   press(tree, 'item-review-forgot');
 
-  expect(textOf(tree, 'item-review-summary')).toBe('Nhớ 1 · chưa nhớ 1');
+  expect(textOf(tree, 'item-review-reviewed-count')).toBe('2');
+  expect(textOf(tree, 'item-review-remembered-count')).toBe('1');
+  expect(textOf(tree, 'item-review-forgot-count')).toBe('1');
+  expect(has(tree, 'item-review-result-word:milk')).toBe(true);
+  expect(textOf(tree, 'item-review-xp')).toBe('+9 XP hôm nay');
   expect(mockRequestSync).toHaveBeenCalledTimes(2);
   const rows = getDatabase().execute(
     `SELECT item_key, result, session_id FROM activity_attempts
@@ -110,6 +120,28 @@ it('walks through the items and records each answer', () => {
   expect(rows?.[0]?.session_id).toBe(rows?.[1]?.session_id);
   press(tree, 'item-review-back');
   expect(goBack).toHaveBeenCalled();
+});
+
+it('practises the forgotten items again without recording them', () => {
+  const tree = renderWithTheme(<ItemReviewScreen queue={queue} />);
+  press(tree, 'item-review-remembered');
+  press(tree, 'item-review-forgot');
+  expect(byTestId(tree, 'item-review-practice')[0]?.props.title).toBe(
+    'Ôn lại 1 từ chưa nhớ',
+  );
+  press(tree, 'item-review-practice');
+  expect(has(tree, 'item-review-card-word:milk')).toBe(true);
+  press(tree, 'item-review-remembered');
+
+  expect(textOf(tree, 'item-review-reviewed-count')).toBe('1');
+  expect(textOf(tree, 'item-review-remembered-count')).toBe('1');
+  expect(has(tree, 'item-review-practice')).toBe(false);
+  expect(has(tree, 'item-review-xp')).toBe(false);
+  const rows = getDatabase().execute(
+    `SELECT item_key FROM activity_attempts WHERE kind = 'review';`,
+  ).rows?._array;
+  expect(rows).toHaveLength(2);
+  expect(mockRequestSync).toHaveBeenCalledTimes(2);
 });
 
 it('says when nothing is due', () => {
@@ -256,7 +288,9 @@ describe('stage 4 written review', () => {
     );
     expect(recorded()).toEqual([['word:play', 'correct']]);
     press(tree, 'item-review-next');
-    expect(textOf(tree, 'item-review-summary')).toBe('Nhớ 1 · chưa nhớ 0');
+    expect(textOf(tree, 'item-review-remembered-count')).toBe('1');
+    expect(textOf(tree, 'item-review-forgot-count')).toBe('0');
+    expect(has(tree, 'item-review-practice')).toBe(false);
   });
 
   it('asks for the verb with another subject and grades a wrong one', () => {

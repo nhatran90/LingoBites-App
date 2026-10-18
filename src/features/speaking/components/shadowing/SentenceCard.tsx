@@ -60,6 +60,7 @@ export function SentenceCard({
           hideIpa={compact}
           highlightedWords={highlightedWords}
           ipa={sentence.ipa}
+          ipaWords={sentence.ipaWords}
           litStyle={styles.lit}
           testID="shadowing-text-en"
           text={sentence.textEn}

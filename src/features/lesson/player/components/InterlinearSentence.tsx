@@ -10,6 +10,8 @@ export type InterlinearSentenceProps = {
   text: string;
   /** Sentence IPA as stored; shown word by word, never as one line. */
   ipa: string | null | undefined;
+  /** The server's split of `ipa` over the words, when it sent one. */
+  ipaWords?: readonly (string | null)[] | null;
   /** Hide the IPA and show only the words. */
   hideIpa?: boolean;
   /** Words lit so far (-1: none), e.g. while a sample plays. */
@@ -27,6 +29,7 @@ export type InterlinearSentenceProps = {
 export function InterlinearSentence({
   text,
   ipa,
+  ipaWords,
   hideIpa = false,
   highlightedWords = -1,
   wordStyle,
@@ -37,8 +40,8 @@ export function InterlinearSentence({
   const {theme} = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const pairs = useMemo(
-    () => (hideIpa ? null : pairWordsWithIpa(text, ipa)),
-    [hideIpa, ipa, text],
+    () => (hideIpa ? null : pairWordsWithIpa(text, ipa, ipaWords)),
+    [hideIpa, ipa, ipaWords, text],
   );
   const words = useMemo(
     () => pairs ?? splitSentenceWords(text).map(word => ({word, ipa: null})),

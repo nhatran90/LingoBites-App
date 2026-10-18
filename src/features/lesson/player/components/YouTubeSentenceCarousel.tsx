@@ -111,8 +111,8 @@ function SentenceCarouselCardBody({
   const styles = useMemo(() => cardStyles(theme), [theme]);
   const cueTestSuffix = cueActive ? '-active' : '';
   const pairs = useMemo(
-    () => pairWordsWithIpa(sentence.text_en, sentence.ipa),
-    [sentence.ipa, sentence.text_en],
+    () => pairWordsWithIpa(sentence.text_en, sentence.ipa, sentence.ipa_words),
+    [sentence.ipa, sentence.ipa_words, sentence.text_en],
   );
   const words = useMemo(
     () =>

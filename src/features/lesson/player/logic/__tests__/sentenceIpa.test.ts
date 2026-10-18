@@ -68,6 +68,25 @@ describe('sentenceIpa', () => {
     ]);
   });
 
+  it('uses the server split (ipa_words) when it fits the words', () => {
+    expect(
+      pairWordsWithIpa('Call 911 now', "k'ɔl n'aɪn n'aʊ", [
+        "k'ɔl",
+        "n'aɪn w'ʌn w'ʌn",
+        "n'aʊ",
+      ]),
+    ).toEqual([
+      {word: 'Call', ipa: 'kˈɔl'},
+      {word: '911', ipa: 'nˈaɪn wˈʌn wˈʌn'},
+      {word: 'now', ipa: 'nˈaʊ'},
+    ]);
+    // A split that does not fit is ignored.
+    expect(pairWordsWithIpa('Call now', "k'ɔl n'aʊ", ["k'ɔl"])).toEqual([
+      {word: 'Call', ipa: 'kˈɔl'},
+      {word: 'now', ipa: 'nˈaʊ'},
+    ]);
+  });
+
   it('falls back to one token per written word', () => {
     expect(pairWordsWithIpa('Call 911', "k'ɔl n'aɪn")).toEqual([
       {word: 'Call', ipa: 'kˈɔl'},

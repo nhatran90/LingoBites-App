@@ -8,6 +8,8 @@ export type ShadowingSentence = {
   textEn: string;
   textVi: string;
   ipa: string;
+  /** `ipa` split over the words of `textEn`, when the server sent one. */
+  ipaWords?: (string | null)[] | null;
 };
 
 export type ShadowingLessonSnapshot = {
@@ -28,6 +30,7 @@ export function orderShadowingSentences(
       textEn: sentence.text_en,
       textVi: sentence.text_vi,
       ipa: sentence.ipa,
+      ipaWords: sentence.ipa_words ?? null,
     }));
 }
 

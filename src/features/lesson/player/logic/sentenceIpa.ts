@@ -40,15 +40,28 @@ export function ipaTokenCount(word: string): number {
 
 /**
  * Each word with its own IPA, or null when the sentence IPA cannot be
- * split over the words (then no IPA is shown at all). Words the server
- * gave several tokens keep them together ("ring-toss" -> "ɹˈɪŋ-tˈɔs");
- * words it skipped ("10", "—") get null.
+ * split over the words (then no IPA is shown at all). The server's own
+ * split (`ipa_words`) wins when it fits the words; otherwise words the
+ * server gave several tokens keep them together ("ring-toss" ->
+ * "ɹˈɪŋ-tˈɔs") and words it skipped ("10", "—") get null.
  */
 export function pairWordsWithIpa(
   text: string,
   ipa: string | null | undefined,
+  ipaWords?: readonly (string | null)[] | null,
 ): WordWithIpa[] | null {
   const words = splitSentenceWords(text);
+  if (
+    ipaWords &&
+    words.length > 0 &&
+    ipaWords.length === words.length &&
+    ipaWords.some(entry => entry !== null)
+  ) {
+    return words.map((word, index) => {
+      const own = ipaWords[index];
+      return {word, ipa: own ? normalizeIpa(own) : null};
+    });
+  }
   const tokens = ipa ? normalizeIpa(ipa).split(' ').filter(Boolean) : [];
   if (words.length === 0 || tokens.length === 0) {
     return null;

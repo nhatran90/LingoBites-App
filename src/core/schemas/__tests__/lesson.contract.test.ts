@@ -67,6 +67,21 @@ describe('canonical lesson contract mirror', () => {
     }
   });
 
+  it('accepts the optional per-word IPA (ipa_words) on sentences', () => {
+    const body = loadFixture('valid-lesson-snapshot-response.json') as {
+      lesson: {sentences: Array<Record<string, unknown>>};
+    };
+    body.lesson.sentences[0]!.ipa_words = ['aɪ', null];
+    if (body.lesson.sentences[1]) {
+      body.lesson.sentences[1].ipa_words = null;
+    }
+    const parsed = LessonSnapshotResponseSchema.safeParse(body);
+    expect(parsed.success).toBe(true);
+    expect(
+      parsed.success && parsed.data.lesson.sentences[0]!.ipa_words,
+    ).toEqual(['aɪ', null]);
+  });
+
   it('parses the specification fixture with items, tasks and steps', () => {
     const parsed = LessonSnapshotResponseSchema.safeParse(
       loadFixture('valid-lesson-snapshot-with-spec-response.json'),

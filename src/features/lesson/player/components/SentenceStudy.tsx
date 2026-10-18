@@ -261,6 +261,7 @@ export function SentenceStudy({
               </View>
               <InterlinearSentence
                 ipa={sentence.ipa}
+                ipaWords={sentence.ipa_words}
                 testID={`sentence-study-en-${sentence.id}`}
                 text={sentence.text_en}
                 wordStyle={styles.english}

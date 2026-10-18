@@ -8,6 +8,7 @@ import {catalogItem} from '@test/support/catalogItemFixture';
 import {
   memoryOf,
   readPatternLibrary,
+  readTenseImageUrl,
   readTenseLibrary,
   saveLearnedItems,
   savePatternLibrary,
@@ -58,12 +59,32 @@ test('the pattern library is kept with its levels, tags and filters', () => {
 test('the tense map is kept with each tense place; a newer download replaces it', () => {
   const past = catalogItem('grammar:past-simple', 'grammar', 'Past simple');
   const save = (
-    tenses: Array<{item: typeof past; time: string; aspect: string}>,
+    tenses: Array<{
+      item: typeof past;
+      time: string;
+      aspect: string;
+      image_url?: string | null;
+    }>,
   ) => saveTenseLibrary({request_id: 'r', status: 'success', tenses}, NOW);
-  save([{item: past, time: 'past', aspect: 'simple'}]);
-  expect(readTenseLibrary()).toEqual([
-    {item: past, time: 'past', aspect: 'simple'},
+  save([
+    {
+      item: past,
+      time: 'past',
+      aspect: 'simple',
+      image_url: 'https://media.example.test/past.png',
+    },
   ]);
+  expect(readTenseLibrary()).toEqual([
+    {
+      item: past,
+      time: 'past',
+      aspect: 'simple',
+      imageUrl: 'https://media.example.test/past.png',
+    },
+  ]);
+  expect(readTenseImageUrl('grammar:past-simple')).toBe(
+    'https://media.example.test/past.png',
+  );
   save([]);
   expect(readTenseLibrary()).toEqual([]);
 });

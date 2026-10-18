@@ -1943,7 +1943,14 @@
     "level_new": "Chưa học",
     "level_started": "Mới học",
     "level_recalling": "Đang nhớ",
-    "level_stable": "Đã nhớ"
+    "level_stable": "Đã nhớ",
+    "progress_kicker": "Tiến độ",
+    "progress_count": "{{count}} / {{total}} thì đã nhớ",
+    "time_remembered": "{{count}}/{{total}} đã nhớ",
+    "tense_kicker": "Thì · {{time}}",
+    "timeline_now": "Bây giờ",
+    "timeline_a11y": "Trục thời gian của thì này",
+    "speak_hint": "Đọc to câu này"
   },
   "tileComposer": {
     "mode_words": "Ghép từ",

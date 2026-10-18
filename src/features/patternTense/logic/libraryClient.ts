@@ -38,6 +38,8 @@ export const TenseLibrarySchema = z.object({
       item: CatalogItemSchema,
       time: z.string().nullable(),
       aspect: z.string().nullable(),
+      /** The tense's picture; older Servers leave it out. */
+      image_url: z.string().nullable().optional(),
     }),
   ),
 });

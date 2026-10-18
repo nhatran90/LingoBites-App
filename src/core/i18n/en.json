@@ -1943,7 +1943,14 @@
     "level_new": "Not learned",
     "level_started": "Just started",
     "level_recalling": "Remembering",
-    "level_stable": "Remembered"
+    "level_stable": "Remembered",
+    "progress_kicker": "Progress",
+    "progress_count": "{{count}} / {{total}} tenses remembered",
+    "time_remembered": "{{count}}/{{total}} remembered",
+    "tense_kicker": "Tense · {{time}}",
+    "timeline_now": "Now",
+    "timeline_a11y": "Timeline of this tense",
+    "speak_hint": "Reads the sentence aloud"
   },
   "tileComposer": {
     "mode_words": "Words",

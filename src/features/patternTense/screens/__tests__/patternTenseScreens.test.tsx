@@ -20,6 +20,7 @@ jest.mock('../../logic/useLibrary', () => ({
 }));
 jest.mock('../../logic/libraryRepository', () => ({
   memoryOf: jest.fn(),
+  readTenseImageUrl: jest.fn(() => null),
 }));
 jest.mock('../../logic/addToReview', () => ({
   addToReview: jest.fn(),
@@ -69,6 +70,8 @@ const pastSimple = catalogItem(
         question: 'Did S V?',
       },
       signals: ['yesterday', 'ago'],
+      time: 'past',
+      aspect: 'simple',
       uses_vi: ['Việc đã xong trong quá khứ'],
       contrast_with: ['grammar:present-perfect'],
     },
@@ -103,7 +106,12 @@ beforeEach(() => {
   });
   mockTenses.mockReturnValue({
     data: [
-      {item: pastSimple, time: 'past', aspect: 'simple'},
+      {
+        item: pastSimple,
+        time: 'past',
+        aspect: 'simple',
+        imageUrl: 'https://media.example.test/past.png',
+      },
       {item: presentPerfect, time: 'present', aspect: 'perfect'},
       {
         item: catalogItem('grammar:be-going-to', 'grammar', 'Be going to'),
@@ -171,6 +179,16 @@ test('the tense map places tenses, colours them by memory and opens one', () => 
     node => node.props.testID === 'tense-cell-grammar:past-simple',
   )[0]!;
   expect(cell.props.accessibilityLabel).toBe('Past simple, Đã nhớ');
+  // The picture is the tile's face; a tense without one gets the default face.
+  expect(has(tree, 'tense-cell-grammar:past-simple-thumb-image')).toBe(true);
+  expect(has(tree, 'tense-cell-grammar:present-perfect-thumb-default')).toBe(
+    true,
+  );
+  // A remembered tense carries its level chip; one not yet learned has none.
+  expect(has(tree, 'tense-cell-grammar:past-simple-level')).toBe(true);
+  expect(has(tree, 'tense-cell-grammar:present-perfect-level')).toBe(false);
+  expect(has(tree, 'tense-time-past')).toBe(true);
+  expect(has(tree, 'tense-map-legend')).toBe(true);
   expect(has(tree, 'tense-cell-grammar:be-going-to')).toBe(true);
   press(tree, 'tense-cell-grammar:present-perfect');
   expect(mockAppNavigation.openTenseDetail).toHaveBeenCalledWith(
@@ -236,11 +254,26 @@ test('a scheduled tense shows it is in review; its confusions open', () => {
     <TenseDetailScreen item={pastSimple} related={[presentPerfect]} />,
   );
   expect(has(tree, 'tense-detail')).toBe(true);
+  expect(has(tree, 'tense-forms')).toBe(true);
+  expect(has(tree, 'tense-timeline')).toBe(true);
+  expect(has(tree, 'tense-hero-thumb-default')).toBe(true);
   expect(has(tree, 'add-to-review-done')).toBe(true);
   press(tree, 'tense-related-grammar:present-perfect');
   expect(mockAppNavigation.openTenseDetail).toHaveBeenCalledWith(
     'grammar:present-perfect',
   );
+});
+
+test('a tense shows its picture as the hero', () => {
+  const tree = renderWithTheme(
+    <TenseDetailScreen
+      imageUrl="https://media.example.test/past.png"
+      item={pastSimple}
+      related={[]}
+    />,
+  );
+  expect(has(tree, 'tense-hero-thumb-image')).toBe(true);
+  expect(has(tree, 'tense-related-grammar:present-perfect')).toBe(false);
 });
 
 test('a detail opened before the library is kept says so', () => {

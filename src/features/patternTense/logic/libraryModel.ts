@@ -16,6 +16,8 @@ export type LibraryTense = {
   item: CatalogItem;
   time: string | null;
   aspect: string | null;
+  /** Picture drawn behind the tense's tile; a default face without one. */
+  imageUrl?: string | null;
 };
 
 export type PatternQuery = {

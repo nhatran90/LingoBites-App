@@ -25,7 +25,13 @@ type PatternIndex = {
 };
 
 type TenseIndex = {
-  tenses: Array<{code: string; time: string | null; aspect: string | null}>;
+  tenses: Array<{
+    code: string;
+    time: string | null;
+    aspect: string | null;
+    /** Missing in lists kept before pictures came. */
+    imageUrl?: string | null;
+  }>;
   savedAt: string;
 };
 
@@ -96,6 +102,7 @@ export function saveTenseLibrary(library: TenseLibrary, now: Date): void {
           code: entry.item.code,
           time: entry.time,
           aspect: entry.aspect,
+          imageUrl: entry.image_url ?? null,
         })),
         savedAt: at,
       } satisfies TenseIndex,
@@ -132,8 +139,23 @@ export function readTenseLibrary(): LibraryTense[] | null {
   const items = readCatalogItems(index.tenses.map(entry => entry.code));
   return index.tenses.flatMap(entry => {
     const item = items.get(entry.code);
-    return item ? [{item, time: entry.time, aspect: entry.aspect}] : [];
+    return item
+      ? [
+          {
+            item,
+            time: entry.time,
+            aspect: entry.aspect,
+            imageUrl: entry.imageUrl ?? null,
+          },
+        ]
+      : [];
   });
+}
+
+/** The picture of one kept tense, or null. */
+export function readTenseImageUrl(code: string): string | null {
+  const index = readSetting<TenseIndex>(TENSES_KEY);
+  return index?.tenses.find(entry => entry.code === code)?.imageUrl ?? null;
 }
 
 /** Keeps learned items' content on the device, so review can ask them offline. */

@@ -97,7 +97,12 @@ async function refreshTenses(): Promise<LibraryTense[] | null> {
     saveTenseLibrary(result.value, new Date());
     return readTenseLibrary();
   } catch {
-    return result.value.tenses;
+    return result.value.tenses.map(entry => ({
+      item: entry.item,
+      time: entry.time,
+      aspect: entry.aspect,
+      imageUrl: entry.image_url ?? null,
+    }));
   }
 }
 

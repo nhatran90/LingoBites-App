@@ -47,6 +47,8 @@ Test: migration lên/xuống trên DB test, env thiếu key thì lỗi, capabili
 
 ### PR 2.2: Cổng chấm và adapter Azure
 
+> **Đã làm** (2026-10-18, Server `698c9f0`). Response mẫu trong `test/fixtures/azure-pronunciation/` dựng theo tài liệu, chưa phải response thật: thay sau bước 0. Điểm ngữ điệu tắt mặc định (`prosody: false`) cho tới khi gọi thật xác nhận REST nhận `EnableProsodyAssessment`. Nghe được tiếng nhưng không đọc từ nào của câu mẫu cũng tính là `no_speech`.
+
 | File | Việc |
 |---|---|
 | `src/common/pronunciation/assessor.ts` (mới) | Interface `PronunciationAssessor { provider; assess(input) }`. Input: `wav: Buffer`, `referenceText`, `locale: 'en-US'`. Output đã chuẩn hoá (mục 5). Lỗi `AssessRetryableError` / `AssessFatalError` giống `SttRetryableError` / `SttFatalError`. |

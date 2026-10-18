@@ -75,6 +75,13 @@ Test: file m4a ngắn mẫu trong `test/fixtures/` ra WAV có header 16 kHz mono
 
 ### PR 2.4: Worker, API, nối luồng
 
+> **Đã làm** (2026-10-18, Server `d778dc7`). Bước 2 xong phần code, cờ vẫn tắt. Thêm so với bảng dưới:
+> - Danh sách bản ghi mặc định ẩn bản ghi phát âm (không có câu), giống `lesson_task`.
+> - Bản ghi mà worker không xử lý được (ví dụ cờ bị tắt giữa chừng) bị xoá sau 1 ngày bằng job dọn dẹp sẵn có.
+> - Lỗi bất ngờ (storage, DB) trả lại lượt hạn mức rồi để lease thử lại.
+> - Deploy chỉ gắn secret `AZURE_SPEECH_KEY` khi secret đã có trong Secret Manager. Production chưa đặt `PRONUNCIATION_ENABLED`/`AZURE_SPEECH_REGION`: thêm khi bật (bước 4).
+> - Còn lại của mục 7: build image, chạy thử trên staging với Azure thật.
+
 | File | Việc |
 |---|---|
 | `src/modules/recordings/model/recordings.ts` | Schema tạo bản ghi `mode = pronunciation`: `client_recording_id`, `item_id`, `duration_ms` (≤ 15 000), `mime_type`, `byte_size`, `sha256`. |

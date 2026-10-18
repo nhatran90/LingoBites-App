@@ -92,6 +92,7 @@ import type {
   RootStackParamList,
   RootTabParamList,
 } from './types';
+import {useActivityTracking} from './useActivityTracking';
 
 export type {
   CoursesStackParamList,
@@ -406,6 +407,9 @@ export function AppNavigator() {
 
   const gateRoute = accountGateRouteForPhase(phase);
   const userId = useAccountStore(state => state.user?.id ?? null);
+  const onNavigationChange = useActivityTracking(
+    gateRoute === 'Tabs' ? userId : null,
+  );
   const profileStatus = useLearnerProfileStore(state => state.status);
   const loadProfile = useLearnerProfileStore(state => state.load);
   const resetProfile = useLearnerProfileStore(state => state.reset);
@@ -462,7 +466,11 @@ export function AppNavigator() {
   }
   return (
     <AppNavigationProvider value={appNavigation}>
-      <NavigationContainer ref={navigationRef}>
+      <NavigationContainer
+        onReady={onNavigationChange}
+        onStateChange={onNavigationChange}
+        ref={navigationRef}
+      >
         <AuthenticatedRootStack />
         {/* S4.3: running "Học theo 6 bước" requests and their banner. */}
         <ComposeTrackerHost />

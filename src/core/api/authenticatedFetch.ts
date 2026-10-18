@@ -9,6 +9,7 @@ import {createAuthClient} from '../auth/authClient';
 import {ensureValidSession} from '../auth/authSession';
 import {getAppVersion} from './appConfig';
 import {trackReachability} from './connectivity';
+import {getDeviceHeaders} from './deviceHeaders';
 
 function mergeHeaders(
   initHeaders?: any,
@@ -38,6 +39,7 @@ function mergeHeaders(
     result['X-App-Version'] = appVersion;
     result['X-App-Platform'] = Platform.OS;
   }
+  Object.assign(result, getDeviceHeaders());
   return result;
 }
 

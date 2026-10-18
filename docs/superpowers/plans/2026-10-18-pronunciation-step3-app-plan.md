@@ -83,6 +83,13 @@ Test: schema đọc đúng response mẫu (lấy từ test server), client với
 
 ### PR 3.2: Logic luyện (hook)
 
+> **Đã làm** (2026-10-18, App `774bc16`). Thêm so với bảng dưới:
+> - Bản ghi dưới 0,5 s báo `too_short` ngay trên máy, không gửi (không tốn lượt).
+> - Đang chờ kết quả mà mất mạng thì vẫn hỏi tiếp tới 30 s rồi báo `slow` (có nút "Kiểm tra lại"), không báo lỗi ngay.
+> - Rút lại đồng ý trong lúc đang gửi thì quay về hỏi đồng ý / trạng thái từ chối.
+> - Một từ Azure đánh dấu đọc sai không bao giờ hiện màu xanh, kể cả khi điểm ≥ 80.
+> - Speaking export thêm `loadReadingRecorder` (bộ ghi âm + đọc file để upload).
+
 | File | Việc |
 |---|---|
 | `src/features/pronunciation/logic/usePronunciationPractice.ts` (mới) | Máy trạng thái ở mục 2. Ghi (tối đa 15 s), tính sha256 + kích thước (dùng `readRecordingFileForUpload` sẵn có), gửi, hỏi kết quả mỗi 1 s rồi giãn dần, dừng ở 30 s. Huỷ khi đóng bảng hoặc app xuống nền. Xoá file khi đóng. |

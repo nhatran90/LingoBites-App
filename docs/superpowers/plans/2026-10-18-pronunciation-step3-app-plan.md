@@ -99,6 +99,12 @@ Test (Jest, recorder và client giả): đi đủ các nhánh của sơ đồ tr
 
 ### PR 3.3: Giao diện
 
+> **Đã làm** (2026-10-18, App `53a3577`). Khác/thêm so với bảng dưới:
+> - Màu theo quy ước đúng/sai của `QuizOption`: tốt = `accent`, khá = `tertiary`, cần sửa = `secondary` + gạch chân (không chỉ dựa vào màu).
+> - Dòng Cài đặt ghi chữ tiếng Việt trực tiếp như dòng "Chấm bài nói" bên cạnh; chỉ hiện khi tính năng đang có hoặc người học đã đồng ý (để luôn rút lại được).
+> - Kiểm tra đủ điều kiện (`usePronunciationAvailable`): server bật + không phải trẻ em + có bộ ghi âm; câu "có" của server nhớ trong phiên.
+> - Chưa chạy trên máy thật: cần thử trên Android và iOS với staging (mục 6).
+
 | File | Việc |
 |---|---|
 | `src/features/pronunciation/components/PronunciationPracticeSheet.tsx` (mới) | Bảng trượt ở mục 2. |

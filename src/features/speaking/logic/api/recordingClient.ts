@@ -7,12 +7,14 @@ import {
 import {createTimeoutSignal} from '@core/api/timeout';
 import type {
   CreateLessonTaskRecordingRequest,
+  CreatePronunciationRecordingRequest,
   CreateRecordingRequest,
   CreateRecordingSuccessResponse,
 } from '@core/schemas/recordings';
 
 import {
   isEvaluationConsentOn,
+  isPronunciationConsentOn,
   isRecordingUploadConsentOn,
 } from '../upload/recordingConsent';
 
@@ -47,9 +49,10 @@ export type RecordingClientOptions = {
   expectedUserId?: string;
   /**
    * PR 14: which consent gates the send. Spoken task answers go out under
-   * the grading consent; every other recording under the upload consent.
+   * the grading consent, pronunciation readings (step 3) under the
+   * pronunciation consent; every other recording under the upload consent.
    */
-  consent?: 'upload' | 'evaluation';
+  consent?: 'upload' | 'evaluation' | 'pronunciation';
 };
 
 export class RecordingUploadUrlError extends Error {
@@ -137,7 +140,9 @@ function recordingAuthenticatedFetchOptions(
     beforeSend: () =>
       options.consent === 'evaluation'
         ? isEvaluationConsentOn()
-        : isRecordingUploadConsentOn(),
+        : options.consent === 'pronunciation'
+          ? isPronunciationConsentOn()
+          : isRecordingUploadConsentOn(),
   };
   if (options.expectedUserId !== undefined) {
     auth.expectedUserId = options.expectedUserId;
@@ -160,7 +165,10 @@ function consentWithdrawnResult(): {
 }
 
 export async function createRecordingMetadata(
-  request: CreateRecordingRequest | CreateLessonTaskRecordingRequest,
+  request:
+    | CreateRecordingRequest
+    | CreateLessonTaskRecordingRequest
+    | CreatePronunciationRecordingRequest,
   options: RecordingClientOptions = {},
 ): Promise<CreateRecordingResult> {
   const {apiBaseUrl} = getAppConfig();

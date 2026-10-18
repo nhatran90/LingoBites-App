@@ -6,6 +6,8 @@ export {
 } from './logic/speakingQueryPort';
 export {
   createRecordingMetadata,
+  RECORDING_UPLOAD_CONSENT_WITHDRAWN,
+  RECORDING_UPLOAD_MIME,
   uploadRecordingBinary,
 } from './logic/api/recordingClient';
 export type {
@@ -76,11 +78,15 @@ export {
 } from './logic/upload/serverRecordingDeletion';
 export {
   isEvaluationConsentOn,
+  isPronunciationConsentOn,
   isRecordingUploadConsentOn,
   readEvaluationConsent,
+  readPronunciationConsent,
   readRecordingUploadConsent,
   setEvaluationConsent,
+  setPronunciationConsent,
   shouldAskEvaluationConsent,
+  shouldAskPronunciationConsent,
 } from './logic/upload/recordingConsent';
 export {queueLessonTaskRecording} from './logic/upload/lessonTaskRecording';
 export {

@@ -386,6 +386,7 @@ describe('lessonHubContent', () => {
       expect(collectLessonPronunciation(lesson)).toEqual([
         {
           key: 'pronunciation:final-t',
+          itemId: fixtureItem('pronunciation-final-t').id,
           text: 'Final /t/',
           meaningVi: 'Âm /t/ ở cuối từ',
           focus: '/t/ cuối từ',

@@ -55,6 +55,29 @@ export type CreateLessonTaskRecordingRequest = z.infer<
   typeof CreateLessonTaskRecordingRequestSchema
 >;
 
+/** Pronunciation step 3: longest reading of one item, in milliseconds. */
+export const PRONUNCIATION_MAX_DURATION_MS = 15_000;
+
+/**
+ * Pronunciation step 3: one pronunciation item read aloud, uploaded for
+ * scoring (Server `CreatePronunciationRecordingRequestSchema`).
+ */
+export const CreatePronunciationRecordingRequestSchema = z
+  .object({
+    client_recording_id: z.string().guid(),
+    mode: z.literal('pronunciation'),
+    item_id: z.string().guid(),
+    duration_ms: z.number().int().min(1).max(PRONUNCIATION_MAX_DURATION_MS),
+    mime_type: z.string().min(1).max(127),
+    byte_size: z.number().int(),
+    sha256: z.string().length(64),
+  })
+  .strict();
+
+export type CreatePronunciationRecordingRequest = z.infer<
+  typeof CreatePronunciationRecordingRequestSchema
+>;
+
 export const RecordingViewSchema = z.object({
   recording_id: z.string().guid(),
   status: RecordingStatusSchema,
@@ -68,10 +91,16 @@ export const RecordingViewSchema = z.object({
   lesson_id: z.string().guid().optional(),
   sentence_id: z.string().guid().optional(),
   mode: z
-    .enum([...SpeakingModeRecordingSchema.options, 'lesson_task'])
+    .enum([
+      ...SpeakingModeRecordingSchema.options,
+      'lesson_task',
+      'pronunciation',
+    ])
     .optional(),
   duration_ms: z.number().int().optional(),
   attempt_id: z.string().guid().optional(),
+  /** Pronunciation step 3: the item read, on a `pronunciation` recording. */
+  item_id: z.string().guid().optional(),
 });
 
 export const CreateRecordingSuccessResponseSchema = z.object({

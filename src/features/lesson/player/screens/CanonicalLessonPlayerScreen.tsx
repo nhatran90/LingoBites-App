@@ -2,13 +2,7 @@ import {useFocusEffect} from '@react-navigation/native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import {Alert, ScrollView, StyleSheet, View} from 'react-native';
 
 import {useSpeak} from '@features/audio';
 
@@ -49,6 +43,7 @@ import {LessonGrammarSection} from '../components/LessonGrammarSection';
 import {LessonListeningSection} from '../components/LessonListeningSection';
 import {LessonMediaDownloadCard} from '../components/LessonMediaDownloadCard';
 import {LessonPatternSection} from '../components/LessonPatternSection';
+import {LessonPlayerSkeleton} from '../components/LessonPlayerSkeleton';
 import {LessonPronunciationSection} from '../components/LessonPronunciationSection';
 import {LessonVocabularySection} from '../components/LessonVocabularySection';
 import {MediaDownloadConsentSheet} from '../components/MediaDownloadConsentSheet';
@@ -494,16 +489,7 @@ export function CanonicalLessonPlayerScreen({navigation, route}: Props) {
 
   const renderBody = () => {
     if (state.status === 'idle' || state.status === 'loading') {
-      return (
-        <View style={themedStyles.centered}>
-          <ActivityIndicator
-            color={theme.colors.primary}
-            size="large"
-            testID="canonical-player-loading"
-          />
-          <AppText color="secondary">{t('lessonPlayer.loading')}</AppText>
-        </View>
-      );
+      return <LessonPlayerSkeleton testID="canonical-player-loading" />;
     }
     if (state.status === 'archived') {
       return (
@@ -890,11 +876,6 @@ function makeStyles(theme: AppTheme) {
     actionBar: {
       backgroundColor: theme.colors.background,
       borderTopColor: theme.colors.outlineVariant,
-    },
-    centered: {
-      alignItems: 'center',
-      gap: theme.spacing.md,
-      paddingVertical: theme.spacing.xl,
     },
     content: {
       gap: theme.spacing.lg,

@@ -6,6 +6,8 @@ export {
 } from './logic/speakingQueryPort';
 export {
   createRecordingMetadata,
+  RECORDING_UPLOAD_CONSENT_WITHDRAWN,
+  RECORDING_UPLOAD_MIME,
   uploadRecordingBinary,
 } from './logic/api/recordingClient';
 export type {
@@ -64,6 +66,21 @@ export function loadLessonRecorder(): LessonRecorder | null {
     return null;
   }
 }
+
+/**
+ * Pronunciation step 3: the lesson recorder plus reading a finished take
+ * (size, SHA-256, bytes) for upload. Loaded lazily like the recorder above.
+ */
+export type ReadingRecorder = LessonRecorder &
+  Pick<typeof import('./logic/recordingService'), 'readRecordingFileForUpload'>;
+
+export function loadReadingRecorder(): ReadingRecorder | null {
+  try {
+    return require('./logic/recordingService') as typeof import('./logic/recordingService');
+  } catch {
+    return null;
+  }
+}
 export {saveShadowingAttempt} from './logic/shadowing/saveShadowingAttempt';
 export {
   initRecordingUploadQueue,
@@ -76,11 +93,15 @@ export {
 } from './logic/upload/serverRecordingDeletion';
 export {
   isEvaluationConsentOn,
+  isPronunciationConsentOn,
   isRecordingUploadConsentOn,
   readEvaluationConsent,
+  readPronunciationConsent,
   readRecordingUploadConsent,
   setEvaluationConsent,
+  setPronunciationConsent,
   shouldAskEvaluationConsent,
+  shouldAskPronunciationConsent,
 } from './logic/upload/recordingConsent';
 export {queueLessonTaskRecording} from './logic/upload/lessonTaskRecording';
 export {
@@ -91,6 +112,7 @@ export {
   applyEvaluationConsent,
   SpeechGradingSettingsRow,
 } from './components/SpeechGradingSettingsRow';
+export {PronunciationSettingsRow} from './components/PronunciationSettingsRow';
 export type {
   SaveShadowingAttemptInput,
   SaveShadowingAttemptResult,

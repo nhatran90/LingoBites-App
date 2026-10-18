@@ -80,6 +80,8 @@ export type LessonPatternEntry = {
 
 export type LessonPronunciationEntry = {
   key: string;
+  /** The catalog item id, which pronunciation scoring (step 3) is sent with. */
+  itemId: string;
   text: string;
   meaningVi: string;
   focus: string;
@@ -390,6 +392,7 @@ export function collectLessonPronunciation(
   return itemsOfKind<PronunciationPayload>(snapshot, 'pronunciation').map(
     ({entry, payload}) => ({
       key: entry.item.code,
+      itemId: entry.item.id,
       text: entry.item.text,
       meaningVi: entry.item.meaning_vi,
       focus: payload.focus,

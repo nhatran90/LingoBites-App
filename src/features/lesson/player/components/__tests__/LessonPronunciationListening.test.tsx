@@ -14,6 +14,7 @@ import {LessonPronunciationSection} from '../LessonPronunciationSection';
 
 const PRONUNCIATION: LessonPronunciationEntry = {
   key: 'pronunciation:final-t',
+  itemId: '00000000-0000-4000-8000-000000000071',
   text: 'Final /t/',
   meaningVi: 'Âm /t/ ở cuối từ',
   focus: '/t/ cuối từ',

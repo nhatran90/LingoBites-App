@@ -1,6 +1,7 @@
 import {useFocusEffect} from '@react-navigation/native';
 import React, {useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
+import {View} from 'react-native';
 
 import {LibraryCover} from '@ui/components/LibraryCover';
 import {useAppTheme} from '@ui/theme';
@@ -11,7 +12,11 @@ import {useLevelUnits} from '../logic/useCurriculum';
 import type {HeroScrollHandler} from './CurriculumHeroChrome';
 import {CurriculumList} from './CurriculumList';
 import {RouteFinish} from './RouteFinish';
-import {type UnitRouteState, UnitRouteStop} from './UnitRouteStop';
+import {
+  type UnitRouteState,
+  UnitRouteStop,
+  UnitRouteStopSkeleton,
+} from './UnitRouteStop';
 
 type Props = {
   levelId: string;
@@ -125,8 +130,21 @@ export function LevelUnitList({
       onRetry={refresh}
       onScroll={onScroll}
       rows={rows}
+      skeleton={<UnitRouteSkeleton />}
       status={state.status}
       testID={testID}
     />
+  );
+}
+
+/** Placeholder route stops while a level's units load. */
+export function UnitRouteSkeleton() {
+  const {theme} = useAppTheme();
+  return (
+    <View style={{gap: theme.spacing.md}}>
+      {[0, 1, 2].map(index => (
+        <UnitRouteStopSkeleton gap={theme.spacing.md} key={index} />
+      ))}
+    </View>
   );
 }

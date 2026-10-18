@@ -77,3 +77,46 @@ export function shouldAskEvaluationConsent(now: Date = new Date()): boolean {
     now.getTime() - askedAt >= EVALUATION_CONSENT_ASK_AGAIN_MS
   );
 }
+
+/**
+ * Pronunciation step 3: consent to send a pronunciation reading to the
+ * Server and Microsoft Azure Speech for scoring. Separate from the grading
+ * consent above: another processor, and the audio is deleted once scored
+ * rather than kept 30 days. A "no" is asked again at most once in 7 days.
+ */
+export const PRONUNCIATION_CONSENT_KEY = 'speaking.pronunciation_consent';
+export const PRONUNCIATION_CONSENT_ASKED_AT_KEY =
+  'speaking.pronunciation_consent_asked_at';
+
+export function readPronunciationConsent(): RecordingUploadConsentValue {
+  const value = readSetting(PRONUNCIATION_CONSENT_KEY);
+  return value === 'on' || value === 'off' ? value : 'undecided';
+}
+
+export function isPronunciationConsentOn(): boolean {
+  return readPronunciationConsent() === 'on';
+}
+
+/** Records the learner's answer to the consent question (or the settings switch). */
+export function setPronunciationConsent(
+  value: 'on' | 'off',
+  now: Date = new Date(),
+): void {
+  const at = now.toISOString();
+  writeSetting(PRONUNCIATION_CONSENT_KEY, value, at);
+  writeSetting(PRONUNCIATION_CONSENT_ASKED_AT_KEY, at, at);
+}
+
+/** Ask when undecided, or again 7 days after a "no". */
+export function shouldAskPronunciationConsent(now: Date = new Date()): boolean {
+  const consent = readPronunciationConsent();
+  if (consent === 'on') return false;
+  if (consent === 'undecided') return true;
+  const askedAt = Date.parse(
+    readSetting(PRONUNCIATION_CONSENT_ASKED_AT_KEY) ?? '',
+  );
+  return (
+    !Number.isFinite(askedAt) ||
+    now.getTime() - askedAt >= EVALUATION_CONSENT_ASK_AGAIN_MS
+  );
+}

@@ -31,6 +31,8 @@ Mỗi PR chạy được, test xanh, cờ vẫn tắt.
 
 ### PR 2.1: Dữ liệu, cấu hình, cờ
 
+> **Đã làm** (2026-10-18, Server `9eeef80`). Khác bảng dưới: không có `PRONUNCIATION_PROVIDER`; provider là `azure` khi có đủ key và region, còn `mock` chỉ dùng trong test. Gắn secret `AZURE_SPEECH_KEY` trong deploy dời sang PR 2.4, vì thêm sớm sẽ làm deploy lỗi khi secret chưa được tạo. Staging đã chặn key bị đẩy lên dưới dạng biến thường. Khoá hạn mức cũng thêm vào form gói trong admin.
+
 | File | Việc |
 |---|---|
 | `src/common/database/migrations/034_pronunciation.sql` (+ `.down.sql`) | Xem mục 4. |

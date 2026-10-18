@@ -139,10 +139,11 @@ describe('ShadowingSessionScreen', () => {
     const progress = root.findByProps({testID: 'pack-session-progress'});
     expect(progress.props.accessibilityValue.text).toBe('Câu 2/3');
     expect(
-      root.findByProps({testID: 'shadowing-text-en'}).props.accessibilityLabel,
+      root.findByProps({testID: 'shadowing-text-en', accessible: true}).props
+        .accessibilityLabel,
     ).toBe('Hello');
     expect(
-      root.findByProps({testID: 'shadowing-text-ipa'}).props.children,
+      root.findByProps({testID: 'shadowing-text-en-ipa-0'}).props.children,
     ).toBe('/həˈloʊ/');
     expect(root.findByProps({testID: 'shadowing-text-vi'}).props.children).toBe(
       'Xin chào',

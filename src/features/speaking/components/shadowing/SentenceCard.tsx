@@ -1,6 +1,8 @@
 import React, {useMemo} from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
 
+import {InterlinearSentence} from '@features/lesson/player';
+
 import {ActionIconButton} from '@ui/components/ActionIconButton';
 import {AppCard} from '@ui/components/AppCard';
 import {AppText} from '@ui/components/AppText';
@@ -32,7 +34,7 @@ export type SentenceCardProps = {
 };
 
 /**
- * The sentence to shadow: English, IPA in its own chip, the Vietnamese
+ * The sentence to shadow: English with each word's IPA under it, the Vietnamese
  * meaning (which the learner can hide) and the "Nghe mẫu" / "Nghe chậm"
  * buttons. While a sample plays, its words light up one by one.
  */
@@ -49,37 +51,23 @@ export function SentenceCard({
 }: SentenceCardProps) {
   const {theme} = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  const words = sentence.textEn.split(' ');
 
   return (
     <AppCard testID="shadowing-sentence-card">
       <View style={compact ? styles.bodyCompact : styles.body}>
-        <AppText
+        <InterlinearSentence
           accessibilityHint="Câu cần nói theo"
-          accessibilityLabel={sentence.textEn}
-          style={[styles.en, compact && styles.enCompact]}
+          hideIpa={compact}
+          highlightedWords={highlightedWords}
+          ipa={sentence.ipa}
+          ipaWords={sentence.ipaWords}
+          litStyle={styles.lit}
           testID="shadowing-text-en"
-        >
-          {highlightedWords < 0
-            ? sentence.textEn
-            : words.map((word, index) => (
-                <AppText
-                  key={`${index}-${word}`}
-                  style={[styles.en, index <= highlightedWords && styles.lit]}
-                >
-                  {index > 0 ? ` ${word}` : word}
-                </AppText>
-              ))}
-        </AppText>
+          text={sentence.textEn}
+          wordStyle={[styles.en, compact && styles.enCompact]}
+        />
         {!compact ? (
           <>
-            {sentence.ipa ? (
-              <View style={styles.ipaChip}>
-                <AppText style={styles.ipa} testID="shadowing-text-ipa">
-                  {sentence.ipa}
-                </AppText>
-              </View>
-            ) : null}
             <View style={styles.divider} />
             {showVietnamese ? (
               <AppText color="secondary" testID="shadowing-text-vi">
@@ -216,19 +204,6 @@ function makeStyles(theme: AppTheme) {
     },
     lit: {
       color: theme.colors.primary,
-    },
-    ipaChip: {
-      alignSelf: 'flex-start',
-      backgroundColor: theme.colors.accentSoft,
-      borderRadius: 12,
-      paddingHorizontal: 10,
-      paddingVertical: 6,
-    },
-    ipa: {
-      color: theme.colors.primary,
-      fontSize: 15,
-      fontWeight: '600',
-      lineHeight: 22,
     },
     divider: {
       backgroundColor: theme.colors.surfaceHigh,

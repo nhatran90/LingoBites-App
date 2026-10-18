@@ -19,6 +19,8 @@ export {
 } from './logic/composeTracker';
 export type {CanonicalLessonPlayerProps} from './components/CanonicalLessonPlayer';
 export {CanonicalBlockView} from './components/CanonicalBlockView';
+export {InterlinearSentence} from './components/InterlinearSentence';
+export type {InterlinearSentenceProps} from './components/InterlinearSentence';
 export {SentenceAnalysisPanel} from './components/SentenceAnalysisPanel';
 export type {
   SentenceAnalysisPanelError,

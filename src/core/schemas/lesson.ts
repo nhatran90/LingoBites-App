@@ -74,6 +74,8 @@ export const LessonSentenceSchema = z
     text_en: NonBlankTextSchema,
     text_vi: NonBlankTextSchema,
     ipa: NonBlankTextSchema,
+    /** `ipa` split over the words of `text_en`; null for a word with no IPA. */
+    ipa_words: z.array(NonBlankTextSchema.nullable()).nullable().optional(),
     start_ms: z.number().int().min(0).nullable(),
     end_ms: z.number().int().nullable(),
   })

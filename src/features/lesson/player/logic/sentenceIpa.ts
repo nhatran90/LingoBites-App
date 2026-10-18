@@ -3,10 +3,10 @@ import type {AnalysisVocabularyItem} from '@core/schemas/lesson';
 /**
  * IPA display helpers for the YouTube study card.
  *
- * Stored IPA marks primary stress with an ASCII apostrophe (`t'ɔs`); the
- * card shows the standard stress mark (`tˈɔs`) and, when the sentence and
- * its IPA have the same number of words, pairs each word with its own
- * transcription so it can sit right under the word.
+ * Stored IPA marks primary stress with an ASCII apostrophe (`t'ɔs`) and
+ * secondary stress with a comma (`d,eɪ`); the cards show the standard marks
+ * (`tˈɔs`, `dˌeɪ`) and pair each word with its own transcription so it can
+ * sit right under the word. The whole-sentence IPA line is never shown.
  */
 
 export type WordWithIpa = {
@@ -16,7 +16,11 @@ export type WordWithIpa = {
 
 /** Standard stress marks and single spaces; transcription is unchanged. */
 export function normalizeIpa(ipa: string): string {
-  return ipa.replace(/['’]/g, 'ˈ').replace(/\s+/g, ' ').trim();
+  return ipa
+    .replace(/['’]/g, 'ˈ')
+    .replace(/,/g, 'ˌ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 /** Sentence split into words as written (punctuation stays on the word). */
@@ -26,19 +30,59 @@ export function splitSentenceWords(text: string): string[] {
 }
 
 /**
- * Each word with its IPA token, or null when the word counts differ and
- * the card has to fall back to the whole-sentence IPA line.
+ * How many IPA tokens the server wrote for one written word. Mirrors the
+ * server's `tokenizeForIpa` (`[a-z']+` on the lower-cased text): "10" and
+ * "—" get none, "ring-toss" and "U.S." get two.
+ */
+export function ipaTokenCount(word: string): number {
+  return word.toLowerCase().match(/[a-z']+/g)?.length ?? 0;
+}
+
+/**
+ * Each word with its own IPA, or null when the sentence IPA cannot be
+ * split over the words (then no IPA is shown at all). The server's own
+ * split (`ipa_words`) wins when it fits the words; otherwise words the
+ * server gave several tokens keep them together ("ring-toss" ->
+ * "ɹˈɪŋ-tˈɔs") and words it skipped ("10", "—") get null.
  */
 export function pairWordsWithIpa(
   text: string,
   ipa: string | null | undefined,
+  ipaWords?: readonly (string | null)[] | null,
 ): WordWithIpa[] | null {
   const words = splitSentenceWords(text);
+  if (
+    ipaWords &&
+    words.length > 0 &&
+    ipaWords.length === words.length &&
+    ipaWords.some(entry => entry !== null)
+  ) {
+    return words.map((word, index) => {
+      const own = ipaWords[index];
+      return {word, ipa: own ? normalizeIpa(own) : null};
+    });
+  }
   const tokens = ipa ? normalizeIpa(ipa).split(' ').filter(Boolean) : [];
-  if (words.length === 0 || words.length !== tokens.length) {
+  if (words.length === 0 || tokens.length === 0) {
     return null;
   }
-  return words.map((word, index) => ({word, ipa: tokens[index]}));
+  const counts = words.map(ipaTokenCount);
+  if (counts.reduce((sum, count) => sum + count, 0) === tokens.length) {
+    let next = 0;
+    return words.map((word, index) => {
+      const own = tokens.slice(next, next + counts[index]);
+      next += counts[index];
+      return {
+        word,
+        ipa: own.length === 0 ? null : own.join(word.includes('-') ? '-' : ' '),
+      };
+    });
+  }
+  // IPA written one token per word (older or hand-edited lessons).
+  if (words.length === tokens.length) {
+    return words.map((word, index) => ({word, ipa: tokens[index]}));
+  }
+  return null;
 }
 
 /** Lower-case word without the punctuation around it ("Teams." -> "teams"). */

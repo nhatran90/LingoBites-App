@@ -1,6 +1,6 @@
 # Bước 3: App luyện phát âm
 
-> Trạng thái: **KẾ HOẠCH, CHỜ DUYỆT**. Ngày: 2026-10-18.
+> Trạng thái: **ĐÃ LÀM PHẦN CODE** (PR 3.1–3.4), chờ thử trên máy thật. Ngày: 2026-10-18.
 > Repo: `LingoBites-App`. Không đổi server.
 > Đi trước: `2026-10-12-pronunciation-architecture.md` (kiến trúc), `2026-10-18-pronunciation-step2-server-plan.md` (server, đã xong).
 
@@ -118,6 +118,8 @@ Test (Jest, recorder và client giả): đi đủ các nhánh của sơ đồ tr
 Test (React Native Testing Library): nút ẩn khi cờ tắt / trẻ em / chưa có micro; hiện hộp đồng ý lần đầu; từ chối thì không ghi được; kết quả tô đúng màu theo mẫu; từ bị bỏ và từ thừa hiện đúng; các thông báo `unscorable`; snapshot sáng/tối không cần.
 
 ### PR 3.4: Bật trong app
+
+> **Đã làm** (2026-10-18). Thêm: bật `pronunciationSupport` trong cấu hình `dev` và `production` (test phát hành yêu cầu mọi tính năng đã làm phải bật), và nút luyện kiểm tra thêm cờ này ở app (tắt được từ app mà không cần server). **Bước 3 xong phần code**; còn thử trên máy thật (mục 6).
 
 | File | Việc |
 |---|---|

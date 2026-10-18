@@ -280,15 +280,10 @@ export function ItemReviewScreen({navigation, queue: given}: Props) {
                 text={current.item.text}
               />
             ) : null}
+            {/* Same order and weight as the daily review's rating buttons:
+                not remembered on the left, remembered (the "yes") on the
+                thumb side, filled. */}
             <View style={themedStyles.row}>
-              <AppButton
-                accessibilityHint={t('itemReview.remembered_hint')}
-                onPress={() => answer('correct')}
-                style={themedStyles.flex}
-                testID="item-review-remembered"
-                title={t('itemReview.remembered')}
-                variant="secondary"
-              />
               <AppButton
                 accessibilityHint={t('itemReview.forgot_hint')}
                 onPress={() => answer('incorrect')}
@@ -296,6 +291,14 @@ export function ItemReviewScreen({navigation, queue: given}: Props) {
                 testID="item-review-forgot"
                 title={t('itemReview.forgot')}
                 variant="outline"
+              />
+              <AppButton
+                accessibilityHint={t('itemReview.remembered_hint')}
+                onPress={() => answer('correct')}
+                style={themedStyles.flex}
+                testID="item-review-remembered"
+                title={t('itemReview.remembered')}
+                variant="deep"
               />
             </View>
             {failed ? (

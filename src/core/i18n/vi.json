@@ -1690,7 +1690,11 @@
     "example": "Ví dụ",
     "prev": "Thẻ trước",
     "prev_hint": "Xem lại thẻ trước",
-    "swipe_hint": "Vuốt sang trái để xem thẻ tiếp, sang phải để quay lại"
+    "swipe_hint": "Vuốt sang trái để xem thẻ tiếp, sang phải để quay lại",
+    "done_added": "từ đã vào lịch ôn",
+    "done_score": "Đúng {{right}}/{{total}}",
+    "done_words": "Từ vừa học",
+    "done_next": "Các từ này sẽ xuất hiện trong phần Ôn tập."
   },
   "packQuiz": {
     "close": "Thoát",

@@ -6,6 +6,7 @@ import type {ReviewRating} from '@core/db/types';
 
 import type {AppTheme} from '../theme';
 import {useAppTheme} from '../theme';
+import {getStickerEdge} from '../theme/hardShadow';
 import {AppText} from './AppText';
 import {MaterialIcon} from './MaterialIcon';
 
@@ -50,7 +51,7 @@ function ratingTone(
   theme: AppTheme,
   rating: ReviewRating,
   disabled: boolean,
-): {background: string; border: string; ink: string} {
+): {background: string; border: string; edge: string; ink: string} {
   if (disabled) {
     // SETE-254: never wash the whole button with disabledOpacity — the
     // composited glyph-vs-fill contrast collapses to ~1.7-2.0:1. A muted but
@@ -59,6 +60,7 @@ function ratingTone(
     return {
       background: theme.colors.surfaceMuted,
       border: theme.colors.border,
+      edge: theme.colors.outlineVariant,
       ink: theme.colors.text.secondary,
     };
   }
@@ -67,13 +69,15 @@ function ratingTone(
       return {
         background: theme.colors.primary,
         border: theme.colors.primary,
+        edge: theme.shelf?.primary.color ?? theme.colors.primaryPressed,
         ink: theme.colors.text.inverse,
       };
     case 'forgot':
     default:
       return {
         background: theme.colors.surface,
-        border: theme.colors.danger,
+        border: theme.shelf?.surface.color ?? theme.colors.surfaceHigh,
+        edge: theme.shelf?.surface.color ?? theme.colors.surfaceHigh,
         ink: theme.colors.danger,
       };
   }
@@ -89,6 +93,8 @@ export function RatingControl({
   const {t} = useTranslation();
 
   if (disabled && onReveal) {
+    const revealEdge =
+      theme.shelf?.primary.color ?? theme.colors.primaryPressed;
     return (
       <View style={styles.container}>
         <Pressable
@@ -98,11 +104,10 @@ export function RatingControl({
           onPress={onReveal}
           style={({pressed}) => [
             styles.revealButton,
-            {
-              backgroundColor: theme.colors.primary,
-              borderColor: theme.colors.primary,
-            },
-            pressed ? {opacity: theme.states.pressedOpacity} : null,
+            {backgroundColor: theme.colors.primary},
+            pressed
+              ? {transform: [{translateY: 3}], ...getStickerEdge(2, revealEdge)}
+              : getStickerEdge(5, revealEdge),
           ]}
           testID="rating-reveal"
         >
@@ -111,7 +116,9 @@ export function RatingControl({
             name="visibility"
             size={22}
           />
-          <AppText style={{color: theme.colors.text.inverse}} variant="label">
+          <AppText
+            style={[styles.revealLabel, {color: theme.colors.text.inverse}]}
+          >
             {t('rating.reveal_label')}
           </AppText>
         </Pressable>
@@ -140,10 +147,8 @@ export function RatingControl({
             onPress={() => onRate(option.rating)}
             style={[
               styles.button,
-              {
-                backgroundColor: tone.background,
-                borderColor: tone.border,
-              },
+              {backgroundColor: tone.background, borderColor: tone.border},
+              getStickerEdge(5, tone.edge),
             ]}
             testID={`rating-${option.rating}`}
           >
@@ -192,7 +197,7 @@ export function RatingControl({
 const styles = StyleSheet.create({
   button: {
     alignItems: 'center',
-    borderRadius: 18,
+    borderRadius: 20,
     borderWidth: 2,
     flexBasis: '46%',
     flexGrow: 1,
@@ -210,18 +215,24 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 12,
   },
+  // Sticker pill like StickerButton. 56 + 2 x 8 margin keeps the 72pt row
+  // of the rating buttons, so the card above never resizes on flip.
   revealButton: {
     alignItems: 'center',
-    borderRadius: 18,
-    borderWidth: 2,
+    borderRadius: 999,
     flexBasis: '100%',
     flexDirection: 'row',
     gap: 8,
     justifyContent: 'center',
-    minHeight: 72,
+    marginVertical: 8,
+    minHeight: 56,
     paddingHorizontal: 16,
+  },
+  revealLabel: {
+    fontSize: 16,
+    fontWeight: '800',
   },
   skipButton: {
     alignItems: 'center',

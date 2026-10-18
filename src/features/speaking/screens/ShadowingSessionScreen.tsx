@@ -1,5 +1,12 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import {Alert, ScrollView, StyleSheet, View} from 'react-native';
+import {SafeAreaInsetsContext} from 'react-native-safe-area-context';
 
 import {SpeechNotice} from '@features/audio';
 import {recordShadowingSessionActivity} from '@features/engagement';
@@ -53,6 +60,9 @@ export function ShadowingSessionScreen({
 }: ShadowingSessionScreenProps) {
   const {theme} = useAppTheme();
   const floatingClearance = useFloatingTabBarClearance();
+  // The mic dock runs under the home indicator, so it pads the bottom inset
+  // itself. Read from context so renders without a provider (Jest) get 0.
+  const bottomInset = useContext(SafeAreaInsetsContext)?.bottom ?? 0;
   const lessonId = route.params.lessonId;
   const initialSentenceIndex = route.params.sentenceIndex ?? 0;
 
@@ -170,7 +180,7 @@ export function ShadowingSessionScreen({
   };
 
   return (
-    <AppScreen>
+    <AppScreen edges={showRecorder ? SCREEN_EDGES_ABOVE_DOCK : undefined}>
       <SessionHeader
         closeHint="Thoát buổi luyện nói"
         closeLabel="Đóng buổi luyện nói"
@@ -262,7 +272,12 @@ export function ShadowingSessionScreen({
       </ScrollView>
 
       {showRecorder ? (
-        <View style={{paddingBottom: floatingClearance}}>
+        <View
+          style={{
+            backgroundColor: theme.colors.surface,
+            paddingBottom: bottomInset,
+          }}
+        >
           <RecorderPanel
             elapsedMs={session.elapsedMs}
             onSkip={
@@ -381,6 +396,8 @@ function useEstimatedPlayback() {
 
   return {kind, progress, start, stop};
 }
+
+const SCREEN_EDGES_ABOVE_DOCK = ['top', 'left', 'right'] as const;
 
 const styles = StyleSheet.create({
   flex1: {

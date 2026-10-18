@@ -12,6 +12,7 @@ import {ActionIconButton} from './ActionIconButton';
 import {AppProgressBar} from './AppProgressBar';
 import {AppText} from './AppText';
 import {HeaderIconButton} from './HeaderIconButton';
+import {MaterialIcon} from './MaterialIcon';
 
 type HeaderProps = {
   current: number;
@@ -19,6 +20,8 @@ type HeaderProps = {
   /** Screen-reader text of the bar ("Thẻ 1/12"). */
   progressLabel: string;
   onClose: () => void;
+  /** The session is over: every step reads as done, none as current. */
+  complete?: boolean;
   /** Screen-reader name and hint of the close button; the pack's by default. */
   closeLabel?: string;
   closeHint?: string;
@@ -32,6 +35,7 @@ export function SessionHeader({
   total,
   progressLabel,
   onClose,
+  complete = false,
   closeLabel,
   closeHint,
   closeTestID = 'screen-header-back',
@@ -52,8 +56,10 @@ export function SessionHeader({
       <AppProgressBar
         accessibilityValue={{text: progressLabel}}
         count={`${current}/${total}`}
-        current={current > 0 && current <= total ? current - 1 : undefined}
-        done={Math.max(0, current - 1)}
+        current={
+          !complete && current > 0 && current <= total ? current - 1 : undefined
+        }
+        done={complete ? total : Math.max(0, current - 1)}
         style={styles.progress}
         testID="pack-session-progress"
         total={total}
@@ -189,7 +195,8 @@ function PackOption({title, letter, state, onPress, testID}: OptionProps) {
   const {t} = useTranslation();
   const {theme} = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  const mark = state === 'right' ? '✓' : state === 'wrong' ? '✕' : null;
+  const mark =
+    state === 'right' ? 'check_circle' : state === 'wrong' ? 'close' : null;
   return (
     <Pressable
       accessibilityHint={t('packQuiz.option_hint')}
@@ -227,14 +234,11 @@ function PackOption({title, letter, state, onPress, testID}: OptionProps) {
       </View>
       <AppText style={styles.optionText}>{title}</AppText>
       {mark ? (
-        <AppText
-          style={[
-            styles.mark,
-            state === 'right' ? styles.markRight : styles.markWrong,
-          ]}
-        >
-          {mark}
-        </AppText>
+        <MaterialIcon
+          color={state === 'right' ? theme.colors.primary : theme.colors.danger}
+          name={mark}
+          size={22}
+        />
       ) : null}
     </Pressable>
   );
@@ -330,12 +334,16 @@ function makeStyles(theme: AppTheme) {
     optionPressed: {
       opacity: theme.states.pressedOpacity,
     },
+    // The bottom edge takes the state colour too, or it stays beige under
+    // a coloured outline.
     optionRight: {
       backgroundColor: theme.colors.accentSoft,
+      borderBottomColor: theme.colors.primary,
       borderColor: theme.colors.primary,
     },
     optionWrong: {
       backgroundColor: theme.colors.secondarySoft,
+      borderBottomColor: theme.colors.danger,
       borderColor: theme.colors.danger,
     },
     optionDim: {
@@ -368,16 +376,6 @@ function makeStyles(theme: AppTheme) {
       flex: 1,
       fontSize: 16,
       fontWeight: '700',
-    },
-    mark: {
-      fontSize: 16,
-      fontWeight: '800',
-    },
-    markRight: {
-      color: theme.colors.primary,
-    },
-    markWrong: {
-      color: theme.colors.danger,
     },
     verdict: {
       borderRadius: 16,

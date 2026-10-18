@@ -76,10 +76,15 @@ export function AppButton({
   const shadowStyle = spec.shadow ? theme.shadow[spec.shadow] : undefined;
 
   const shelfRoleMap: Record<string, string> = {
+    // The shelf themes paint `primary` with the accent face, so it shares
+    // the accent edge.
+    primary: 'accent',
     'primary-accent': 'accent',
     'secondary-coral': 'coral',
     deep: 'primary',
     ghost: 'ghost',
+    outline: 'outline',
+    secondary: 'secondary',
   };
   const shelfRole = shelfRoleMap[variant];
   const shelf =

@@ -41,21 +41,15 @@ export function PrimaryActionButton({
           alignItems: 'center',
           backgroundColor: coral ? HERO_PALETTE.coral : theme.colors.primary,
           borderRadius: theme.radius.lg,
-          ...(coral
-            ? {
-                borderBottomColor: HERO_PALETTE.coralShelf,
-                borderBottomWidth: pressed ? 1 : 4,
-              }
-            : null),
+          borderBottomColor: coral
+            ? HERO_PALETTE.coralShelf
+            : theme.colors.primaryPressed,
+          borderBottomWidth: pressed ? 1 : 4,
           flexDirection: 'row',
           gap: 8,
           justifyContent: 'center',
           minHeight: 52,
-          opacity: disabled
-            ? theme.states.disabledOpacity
-            : pressed && !coral
-              ? theme.states.pressedOpacity
-              : 1,
+          opacity: disabled ? theme.states.disabledOpacity : 1,
         },
       ]}
     >

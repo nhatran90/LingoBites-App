@@ -74,6 +74,8 @@ export const stickerSoftTheme: AppTheme = {
     coral: {height: 6, color: '#e05068'},
     primary: {height: 6, color: '#004a41'},
     ghost: {height: 6, color: '#d7d4bf'},
+    outline: {height: 5, color: '#006b5f'},
+    secondary: {height: 5, color: '#d7d4bf'},
     chipTeal: {height: 5, color: '#a9e2da'},
     chipYellow: {height: 5, color: '#ecd989'},
     chipPink: {height: 5, color: '#f4c1ca'},
@@ -89,9 +91,10 @@ export const stickerSoftTheme: AppTheme = {
         radius: 999,
       },
       secondary: {
-        background: 'transparent',
+        // Opaque face: the shelf under it would show through a transparent one.
+        background: '#ffffff',
         text: '#006b5f',
-        border: '#bacac5',
+        border: '#e6e2ca',
         height: 48,
         radius: 999,
       },

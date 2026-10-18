@@ -1690,7 +1690,11 @@
     "example": "Example",
     "prev": "Previous card",
     "prev_hint": "Shows the previous card",
-    "swipe_hint": "Swipe left for the next card, right to go back"
+    "swipe_hint": "Swipe left for the next card, right to go back",
+    "done_added": "words added to your review",
+    "done_score": "{{right}}/{{total}} correct",
+    "done_words": "Words you just learned",
+    "done_next": "You will see these words again in Review."
   },
   "packQuiz": {
     "close": "Close",

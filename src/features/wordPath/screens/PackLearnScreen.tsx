@@ -9,6 +9,9 @@ import {AppButton} from '@ui/components/AppButton';
 import {AppCard} from '@ui/components/AppCard';
 import {AppScreen} from '@ui/components/AppScreen';
 import {AppText} from '@ui/components/AppText';
+import {HeroFill} from '@ui/components/HeroFill';
+import {MaterialIcon} from '@ui/components/MaterialIcon';
+import {StickerButton} from '@ui/components/StickerButton';
 import {StudyFlashCard} from '@ui/components/StudyFlashCard';
 import {
   SessionHeader,
@@ -19,6 +22,8 @@ import {SwipeCard, type SwipeDirection} from '@ui/components/SwipeCard';
 import {canWriteWord, WriteWordButton} from '@ui/components/WriteWordButton';
 import {WriteWordPanel} from '@ui/components/WriteWordPanel';
 import {type AppTheme, useAppTheme} from '@ui/theme';
+import {getStickerEdge} from '@ui/theme/hardShadow';
+import {HERO_PALETTE} from '@ui/theme/heroPalette';
 
 import {readCatalogItems} from '@core/db/catalogItems';
 import {
@@ -161,6 +166,7 @@ export function PackLearnScreen({navigation, route, items: given}: Props) {
   return (
     <AppScreen>
       <SessionHeader
+        complete={stage === 'done'}
         current={header.current}
         onClose={close}
         progressLabel={header.label}
@@ -245,17 +251,12 @@ export function PackLearnScreen({navigation, route, items: given}: Props) {
         ) : null}
 
         {stage === 'done' ? (
-          <AppCard testID="pack-learn-done">
-            <AppText variant="h3">
-              {t('packLearn.done', {count: learned.length})}
-            </AppText>
-            <AppButton
-              onPress={() => appNavigation.goBack()}
-              testID="pack-learn-back"
-              title={t('packLearn.back')}
-              variant="outline"
-            />
-          </AppCard>
+          <PackLearnDone
+            learned={learned}
+            items={items}
+            packLabel={packLabel}
+            total={questions.length}
+          />
         ) : null}
       </ScrollView>
 
@@ -290,16 +291,130 @@ export function PackLearnScreen({navigation, route, items: given}: Props) {
             onPress={nextQuestion}
             style={themedStyles.grow}
             testID="pack-learn-next-question"
+            iconRight="chevron_right"
             title={
               questionIndex + 1 < questions.length
                 ? t('packLearn.next')
                 : t('packLearn.finish')
             }
-            variant="primary"
+            variant="secondary-coral"
           />
         </View>
       ) : null}
+
+      {stage === 'done' ? (
+        <View style={themedStyles.footer}>
+          <View style={themedStyles.grow}>
+            <StickerButton
+              label={t('packLearn.finish')}
+              onPress={() => appNavigation.goBack()}
+              testID="pack-learn-back"
+            />
+          </View>
+        </View>
+      ) : null}
     </AppScreen>
+  );
+}
+
+const DONE_WORDS_SHOWN = 6;
+
+/** The end of the session: how many words went into review, and which. */
+function PackLearnDone({
+  learned,
+  items,
+  packLabel,
+  total,
+}: {
+  learned: string[];
+  items: CatalogItem[];
+  packLabel: string | null;
+  total: number;
+}) {
+  const {t} = useTranslation();
+  const {theme} = useAppTheme();
+  const themedStyles = useMemo(() => makeStyles(theme), [theme]);
+  const words = items
+    .filter(item => learned.includes(item.code))
+    .map(item => item.text);
+  const hidden = words.length - DONE_WORDS_SHOWN;
+  return (
+    <View style={themedStyles.doneContent} testID="pack-learn-done">
+      <View
+        accessible
+        accessibilityLabel={t('packLearn.done', {count: learned.length})}
+        style={themedStyles.doneShelf}
+      >
+        <View style={themedStyles.doneHero}>
+          <HeroFill id="pack-learn-done-fill" />
+          <View style={themedStyles.doneMedal}>
+            <MaterialIcon
+              color={theme.colors.primary}
+              name="check_circle"
+              size={40}
+            />
+          </View>
+          <AppText
+            style={themedStyles.doneCount}
+          >{`+${learned.length}`}</AppText>
+          <AppText style={themedStyles.doneAdded}>
+            {t('packLearn.done_added')}
+          </AppText>
+          <View style={themedStyles.doneChips}>
+            <View style={themedStyles.doneChip}>
+              <MaterialIcon
+                color={HERO_PALETTE.tealInk}
+                name="check"
+                size={16}
+              />
+              <AppText style={themedStyles.doneChipText}>
+                {t('packLearn.done_score', {right: learned.length, total})}
+              </AppText>
+            </View>
+            {packLabel ? (
+              <View style={themedStyles.doneChip}>
+                <MaterialIcon
+                  color={HERO_PALETTE.tealInk}
+                  name="style"
+                  size={16}
+                />
+                <AppText numberOfLines={1} style={themedStyles.doneChipText}>
+                  {packLabel}
+                </AppText>
+              </View>
+            ) : null}
+          </View>
+        </View>
+      </View>
+      {words.length > 0 ? (
+        <AppCard>
+          <View style={themedStyles.doneWordsBlock}>
+            <AppText style={themedStyles.doneWordsLabel}>
+              {t('packLearn.done_words')}
+            </AppText>
+            <View style={themedStyles.doneWords}>
+              {words.slice(0, DONE_WORDS_SHOWN).map(word => (
+                <View key={word} style={themedStyles.doneWord}>
+                  <AppText style={themedStyles.doneWordText}>{word}</AppText>
+                </View>
+              ))}
+              {hidden > 0 ? (
+                <View style={[themedStyles.doneWord, themedStyles.doneMore]}>
+                  <AppText color="muted" style={themedStyles.doneWordText}>
+                    {`+${hidden}`}
+                  </AppText>
+                </View>
+              ) : null}
+            </View>
+          </View>
+        </AppCard>
+      ) : null}
+      {learned.length > 0 ? (
+        <AppText color="muted" style={themedStyles.doneNext} variant="caption">
+          {t('packLearn.done_next')}
+        </AppText>
+      ) : null}
+    </View>
   );
 }
 
@@ -319,6 +434,101 @@ function makeStyles(theme: AppTheme) {
     },
     grow: {
       flex: 1,
+    },
+    doneContent: {
+      gap: theme.spacing.lg,
+      paddingTop: theme.spacing.sm,
+    },
+    doneShelf: {
+      backgroundColor: HERO_PALETTE.shelf,
+      borderRadius: 30,
+      paddingBottom: 6,
+    },
+    doneHero: {
+      alignItems: 'center',
+      borderRadius: 30,
+      gap: 6,
+      overflow: 'hidden',
+      paddingBottom: 20,
+      paddingHorizontal: 18,
+      paddingTop: 26,
+    },
+    doneMedal: {
+      alignItems: 'center',
+      backgroundColor: HERO_PALETTE.white,
+      borderRadius: 36,
+      height: 72,
+      justifyContent: 'center',
+      marginBottom: 6,
+      width: 72,
+      ...getStickerEdge(5, HERO_PALETTE.ghostShelf),
+    },
+    doneCount: {
+      color: HERO_PALETTE.ink,
+      fontSize: 52,
+      fontWeight: '900',
+      lineHeight: 58,
+    },
+    doneAdded: {
+      color: HERO_PALETTE.tealInk,
+      fontSize: 16,
+      fontWeight: '800',
+      textAlign: 'center',
+    },
+    doneChips: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 6,
+      justifyContent: 'center',
+      marginTop: 8,
+    },
+    doneChip: {
+      alignItems: 'center',
+      backgroundColor: HERO_PALETTE.chipStrong,
+      borderRadius: theme.radius.pill,
+      flexDirection: 'row',
+      gap: 4,
+      maxWidth: '100%',
+      paddingHorizontal: 11,
+      paddingVertical: 5,
+    },
+    doneChipText: {
+      color: HERO_PALETTE.tealInk,
+      flexShrink: 1,
+      fontSize: 13,
+      fontWeight: '800',
+    },
+    doneWordsBlock: {
+      gap: 10,
+    },
+    doneWordsLabel: {
+      color: theme.colors.text.muted,
+      fontSize: 11,
+      fontWeight: '800',
+      letterSpacing: 1,
+      textTransform: 'uppercase',
+    },
+    doneWords: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 6,
+    },
+    doneWord: {
+      backgroundColor: theme.colors.accentSoft,
+      borderRadius: theme.radius.pill,
+      paddingHorizontal: 11,
+      paddingVertical: 5,
+    },
+    doneMore: {
+      backgroundColor: theme.colors.surfaceMuted,
+    },
+    doneWordText: {
+      color: theme.colors.primary,
+      fontSize: 13,
+      fontWeight: '800',
+    },
+    doneNext: {
+      textAlign: 'center',
     },
     swipeHint: {
       textAlign: 'center',

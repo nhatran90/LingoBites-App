@@ -550,6 +550,7 @@ function SummaryStat({
 
 const styles = StyleSheet.create({
   actions: {
+    gap: 12,
     paddingBottom: 12,
     paddingTop: 8,
   },

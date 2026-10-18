@@ -95,6 +95,9 @@ export type ShelfScale = {
   coral: {height: number; color: string};
   primary: {height: number; color: string};
   ghost: {height: number; color: string};
+  /** Edge under AppButton's `outline` and `secondary` variants. */
+  outline: {height: number; color: string};
+  secondary: {height: number; color: string};
   chipTeal: {height: number; color: string};
   chipYellow: {height: number; color: string};
   chipPink: {height: number; color: string};

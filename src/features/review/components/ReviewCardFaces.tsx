@@ -58,7 +58,7 @@ export function ReviewCardFront({
   if (card.kind === 'pattern') {
     // No speak button: hearing the sentence would give the answer away.
     return (
-      <View style={themedStyles.shelf}>
+      <View style={[themedStyles.shelf, styles.shelfHero]}>
         <View style={[themedStyles.face, themedStyles.front]} testID={testID}>
           <HeroFill id={`${testID}-fill`} />
           <View style={styles.chips}>
@@ -94,7 +94,7 @@ export function ReviewCardFront({
     );
   }
   return (
-    <View style={themedStyles.shelf}>
+    <View style={[themedStyles.shelf, styles.shelfHero]}>
       <View style={[themedStyles.face, themedStyles.front]} testID={testID}>
         <HeroFill id={`${testID}-fill`} />
         <View style={styles.chips}>
@@ -312,6 +312,10 @@ function makeStyles(theme: AppTheme) {
 }
 
 const styles = StyleSheet.create({
+  // The mint-to-sky face sits on the teal hero edge, like the pack card.
+  shelfHero: {
+    backgroundColor: PALETTE.shelf,
+  },
   bandMeta: {
     color: PALETTE.tealInk,
     opacity: 0.85,

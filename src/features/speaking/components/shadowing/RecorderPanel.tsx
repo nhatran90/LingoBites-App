@@ -20,19 +20,21 @@ export type RecorderPanelProps = {
   elapsedMs: number;
   onStart: () => void;
   onStop: () => void;
-  /** Shown under the mic while idle; omitted hides "Bỏ qua câu này". */
+  /** Shown beside the mic while idle; omitted hides "Bỏ qua". */
   onSkip?: () => void;
 };
 
-const RING_SIZE = 112;
-const RING_STROKE = 6;
-const MIC_SIZE = 84;
-const WAVE_BARS = 22;
+const RING_SIZE = 84;
+const RING_STROKE = 5;
+const MIC_SIZE = 64;
+const WAVE_BARS = 16;
 
 /**
- * The mic dock pinned under the sentence. Idle: a big mint mic button and
- * "Bỏ qua câu này". Recording: a coral stop button inside a ring that fills
- * up to the 30-second limit, the timer and a moving wave.
+ * The compact mic dock pinned under the sentence, one row high so the
+ * sentence card above keeps its sample buttons on screen.
+ * Idle: [mint mic] "Chạm để nói theo" / "Tối đa 30s" (info, not a button)
+ * [Bỏ qua]. Recording: a coral stop button inside a ring that fills up to
+ * the 30-second limit, the timer and a moving wave in the same row.
  */
 export function RecorderPanel({
   sessionState,
@@ -103,65 +105,74 @@ export function RecorderPanel({
           {recording ? (
             <View style={styles.stopSquare} />
           ) : (
-            <MaterialIcon color={theme.colors.accentInk} name="mic" size={36} />
+            <MaterialIcon color={theme.colors.accentInk} name="mic" size={30} />
           )}
         </Pressable>
       </View>
 
-      {recording ? (
-        <>
-          <AppText style={styles.timer} testID="shadowing-recording-counter">
-            {formatShadowingElapsed(elapsedMs)}
-            <AppText style={styles.timerMax}>{` / ${maxLabel}`}</AppText>
-          </AppText>
-          <View
-            accessibilityHint="Sóng chạy trong lúc ghi âm"
-            accessibilityLabel="Mức âm thanh"
-            style={styles.wave}
-            testID="shadowing-level-animation"
-          >
-            {Array.from({length: WAVE_BARS}, (_, index) => (
-              <View
-                key={index}
-                style={[styles.waveBar, {height: waveHeight(index, elapsedMs)}]}
-              />
-            ))}
-          </View>
-          <AppText color="muted" style={styles.sub}>
-            Bấm ô vuông để dừng
-          </AppText>
-        </>
-      ) : (
-        <>
-          <AppText style={styles.hint} testID="shadowing-record-hint">
-            Chạm để nói theo
-          </AppText>
-          <AppText color="muted" style={styles.sub}>
-            Tối đa 30 giây
-          </AppText>
-          {onSkip ? (
-            <Pressable
-              accessibilityRole="button"
-              hitSlop={8}
-              onPress={onSkip}
-              style={({pressed}) => [
-                styles.skip,
-                pressed && {opacity: theme.states.pressedOpacity},
-              ]}
-              testID="shadowing-skip-sentence"
+      <View style={styles.text}>
+        {recording ? (
+          <>
+            <AppText style={styles.timer} testID="shadowing-recording-counter">
+              {formatShadowingElapsed(elapsedMs)}
+              <AppText style={styles.timerMax}>{` / ${maxLabel}`}</AppText>
+            </AppText>
+            <View
+              accessibilityHint="Sóng chạy trong lúc ghi âm"
+              accessibilityLabel="Mức âm thanh"
+              style={styles.wave}
+              testID="shadowing-level-animation"
             >
+              {Array.from({length: WAVE_BARS}, (_, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.waveBar,
+                    {height: waveHeight(index, elapsedMs)},
+                  ]}
+                />
+              ))}
+            </View>
+          </>
+        ) : (
+          <>
+            <AppText style={styles.hint} testID="shadowing-record-hint">
+              Chạm để nói theo
+            </AppText>
+            <View style={styles.limit}>
               <MaterialIcon
                 color={theme.colors.text.muted}
-                name="chevron_right"
-                size={18}
+                name="timer"
+                size={15}
               />
-              <AppText color="muted" style={styles.skipLabel}>
-                Bỏ qua câu này
+              <AppText color="muted" style={styles.sub}>
+                Tối đa 30s
               </AppText>
-            </Pressable>
-          ) : null}
-        </>
-      )}
+            </View>
+          </>
+        )}
+      </View>
+
+      {!recording && onSkip ? (
+        <Pressable
+          accessibilityHint="Chuyển sang câu tiếp theo"
+          accessibilityLabel="Bỏ qua câu này"
+          accessibilityRole="button"
+          hitSlop={8}
+          onPress={onSkip}
+          style={({pressed}) => [styles.skip, pressed && styles.skipPressed]}
+          testID="shadowing-skip-sentence"
+        >
+          <AppText color="secondary" style={styles.skipLabel}>
+            Bỏ qua
+          </AppText>
+          <MaterialIcon
+            color={theme.colors.text.secondary}
+            name="chevron_right"
+            size={18}
+          />
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -182,16 +193,32 @@ function makeStyles(theme: AppTheme) {
   return StyleSheet.create({
     dock: {
       alignItems: 'center',
-      gap: theme.spacing.xs,
-      paddingBottom: theme.spacing.sm,
+      backgroundColor: theme.colors.surface,
+      borderTopColor: theme.shelf?.surface.color ?? theme.colors.surfaceHigh,
+      borderTopLeftRadius: 28,
+      borderTopRightRadius: 28,
+      borderTopWidth: 1,
+      flexDirection: 'row',
+      gap: theme.spacing.md,
+      paddingBottom: theme.spacing.md,
+      paddingHorizontal: theme.gutter,
       paddingTop: theme.spacing.md,
     },
     micWrap: {
       alignItems: 'center',
       height: RING_SIZE,
       justifyContent: 'center',
-      marginBottom: theme.spacing.xs,
       width: RING_SIZE,
+    },
+    text: {
+      flex: 1,
+      gap: 2,
+      minWidth: 0,
+    },
+    limit: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 3,
     },
     mic: {
       alignItems: 'center',
@@ -202,20 +229,20 @@ function makeStyles(theme: AppTheme) {
     },
     micIdle: {
       backgroundColor: theme.colors.accent,
-      ...getStickerEdge(5, HERO_PALETTE.shelf),
+      ...getStickerEdge(4, HERO_PALETTE.shelf),
     },
     micRecording: {
       backgroundColor: HERO_PALETTE.coral,
-      ...getStickerEdge(5, HERO_PALETTE.coralShelf),
+      ...getStickerEdge(4, HERO_PALETTE.coralShelf),
     },
     micPressed: {
       transform: [{translateY: 3}],
     },
     stopSquare: {
       backgroundColor: HERO_PALETTE.white,
-      borderRadius: 7,
-      height: 26,
-      width: 26,
+      borderRadius: 6,
+      height: 22,
+      width: 22,
     },
     hint: {
       fontSize: 16,
@@ -227,7 +254,7 @@ function makeStyles(theme: AppTheme) {
     },
     timer: {
       color: theme.colors.onSecondaryContainer,
-      fontSize: 24,
+      fontSize: 20,
       fontVariant: ['tabular-nums'],
       fontWeight: '800',
     },
@@ -240,24 +267,40 @@ function makeStyles(theme: AppTheme) {
       alignItems: 'center',
       flexDirection: 'row',
       gap: 3,
-      height: 30,
+      height: 28,
     },
     waveBar: {
       backgroundColor: HERO_PALETTE.coral,
       borderRadius: 2,
       width: 4,
     },
+    // A small sticker button: the only action besides the mic.
     skip: {
       alignItems: 'center',
+      backgroundColor: theme.colors.surface,
+      borderColor: theme.shelf?.surface.color ?? theme.colors.surfaceHigh,
+      borderRadius: theme.radius.pill,
+      borderWidth: 1.5,
       flexDirection: 'row',
-      gap: 4,
-      marginTop: theme.spacing.xs,
-      minHeight: 44,
-      paddingHorizontal: theme.spacing.sm,
+      gap: 2,
+      minHeight: 40,
+      paddingLeft: 14,
+      paddingRight: 8,
+      ...getStickerEdge(
+        3,
+        theme.shelf?.surface.color ?? theme.colors.surfaceHigh,
+      ),
+    },
+    skipPressed: {
+      transform: [{translateY: 2}],
+      ...getStickerEdge(
+        1,
+        theme.shelf?.surface.color ?? theme.colors.surfaceHigh,
+      ),
     },
     skipLabel: {
       fontSize: 14,
-      fontWeight: '700',
+      fontWeight: '800',
     },
   });
 }

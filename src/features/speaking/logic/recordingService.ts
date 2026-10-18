@@ -114,6 +114,7 @@ export type StartRecordingResult =
 /**
  * PR 14 (decision H13): spoken task answers go to speech recognition, which
  * needs no more than AAC, mono, 16 kHz at ~32 kbps (35 s ≈ 140 KB).
+ * Pronunciation readings (step 3) use it too: Azure scores 16 kHz mono.
  */
 export const LESSON_TASK_AUDIO_SET: AudioSet = {
   AudioEncoderAndroid: AudioEncoderAndroidType.AAC,
@@ -131,7 +132,7 @@ export const LESSON_TASK_AUDIO_SET: AudioSet = {
 export const SPEAKING_AUDIO_SET: AudioSet = {AudioQuality: 'medium'};
 
 export async function startRecording(
-  mode: SpeakingMode | 'lesson_task',
+  mode: SpeakingMode | 'lesson_task' | 'pronunciation',
   recordingId: string,
 ): Promise<StartRecordingResult> {
   if (!nativeFsAvailable()) {
@@ -174,7 +175,9 @@ export async function startRecording(
   try {
     await getRecorder().startRecorder(
       filePath,
-      mode === 'lesson_task' ? LESSON_TASK_AUDIO_SET : SPEAKING_AUDIO_SET,
+      mode === 'lesson_task' || mode === 'pronunciation'
+        ? LESSON_TASK_AUDIO_SET
+        : SPEAKING_AUDIO_SET,
     );
     return {ok: true, filePath};
   } catch {

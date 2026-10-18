@@ -232,6 +232,8 @@ Migration: thêm hai bảng và một cột nullable. Không đổi bảng `eval
 
 ## 11. Cần quyết định trước bước 2
 
+> 2026-10-18: đã chốt câu 1 (Azure) và câu 2 (đồng ý gửi giọng). Câu 3–5 có mặc định trong `2026-10-18-pronunciation-step2-server-plan.md`, chờ duyệt.
+
 1. Engine: đồng ý dùng Azure Pronunciation Assessment, hay chỉ cần "máy không nghe rõ" (khi đó dùng logprobs và ghi rõ trên UI là không phải điểm phát âm)?
 2. Chấp nhận gửi giọng người học tới Microsoft Azure và cập nhật consent, thông báo riêng tư?
 3. Duyệt cài ffmpeg trong image Docker?

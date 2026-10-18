@@ -43,11 +43,15 @@ export const featureRegistry = [
   },
   {
     key: 'pronunciationSupport',
-    module: 'src/features/speaking',
+    module: 'src/features/pronunciation',
     required: false,
     releaseGroup: 'foundation',
-    status: 'not_implemented',
-    limitations: ['Not implemented yet'],
+    status: 'ready',
+    entryPoint: 'Lesson player -> Phát âm -> Luyện phát âm',
+    limitations: [
+      'Offered only while the Server scores pronunciation (PRONUNCIATION_ENABLED)',
+      'Not offered to kids (A11)',
+    ],
   },
   {
     key: 'themeSystem',

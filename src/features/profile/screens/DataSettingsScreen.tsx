@@ -3,7 +3,10 @@ import React from 'react';
 import {Alert, Modal, StyleSheet, View} from 'react-native';
 
 import {withdrawPhotoConsent} from '@features/input';
+import {usePronunciationAvailable} from '@features/pronunciation';
 import {
+  PronunciationSettingsRow,
+  readPronunciationConsent,
   SpeakingRecordingsSettingsRow,
   SpeechGradingSettingsRow,
 } from '@features/speaking';
@@ -29,6 +32,11 @@ type Props = NativeStackScreenProps<ProfileStackParamList, 'DataSettings'>;
  */
 export function DataSettingsScreen({navigation}: Props) {
   const {theme} = useAppTheme();
+  // Pronunciation step 3: shown where scoring is offered, and always once
+  // the learner said yes, so the consent can be withdrawn.
+  const pronunciationAvailable = usePronunciationAvailable();
+  const showPronunciation =
+    pronunciationAvailable || readPronunciationConsent() === 'on';
   const handleWithdrawPhotoConsent = () => {
     Alert.alert(
       'Rút đồng ý gửi ảnh?',
@@ -104,6 +112,7 @@ export function DataSettingsScreen({navigation}: Props) {
       <SettingsGroup title="Bản ghi giọng nói">
         <SpeakingRecordingsSettingsRow />
         <SpeechGradingSettingsRow />
+        {showPronunciation ? <PronunciationSettingsRow /> : null}
       </SettingsGroup>
 
       <SettingsGroup title="Vùng nguy hiểm">

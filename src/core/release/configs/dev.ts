@@ -10,6 +10,7 @@ const dev: ReleaseConfig = {
     ocrScanner: true,
     ocrReviewEdit: true,
     shortPractice: true,
+    pronunciationSupport: true,
     themeSystem: true,
     themeSwitcher: true,
     darkTheme: true,

@@ -19,6 +19,7 @@ import {
   lessonMediaDirFor,
   type LessonMediaFileSystem,
   lessonMediaSizeBytes,
+  listLessonDownloadCards,
   listLessonDownloadKinds,
   listLessonDownloads,
   listLessonMediaDownloads,
@@ -189,6 +190,66 @@ describe('canonical download repository (real SQLite, INV-007)', () => {
     expect(listLessonDownloadKinds(getDatabase())).toEqual([
       {lessonId: lessonIdOf(body), origin: 'admin', sourceType: 'admin_text'},
     ]);
+  });
+
+  it('lists the card fields of each download without parsing the body', () => {
+    const lesson = loadSnapshotBody();
+    const video = JSON.parse(JSON.stringify(lesson)) as {
+      lesson: Record<string, unknown>;
+    };
+    video.lesson.id = '33333333-3333-4333-8333-333333333399';
+    video.lesson.origin = 'learner';
+    video.lesson.source_type = 'youtube';
+    video.lesson.unit = null;
+    video.lesson.generated = true;
+    video.lesson.youtube = {video_id: 'abc123', duration_ms: 272000};
+    saveLessonSnapshotBody(
+      {body: lesson, now: '2026-10-01T00:00:00.000Z'},
+      getDatabase(),
+    );
+    saveLessonSnapshotBody(
+      {body: video, now: '2026-10-02T00:00:00.000Z'},
+      getDatabase(),
+    );
+    // A body that is not JSON is skipped, as the full read skips it.
+    getDatabase().execute(
+      `INSERT INTO lesson_downloads (lesson_id, content_revision,
+         server_revision, contract_version, snapshot_json, media_dir,
+         downloaded_at)
+       VALUES ('broken', 1, NULL, 1, '{not json', NULL, '2026-10-03');`,
+    );
+
+    const cards = listLessonDownloadCards(getDatabase());
+    // Same lessons, order and values as reading the whole snapshots.
+    const records = listLessonDownloads(getDatabase()).slice().reverse();
+    expect(cards.map(card => card.lessonId)).toEqual(
+      records.map(record => record.lessonId),
+    );
+    cards.forEach((card, index) => {
+      const {snapshot, downloadedAt} = records[index]!;
+      expect(card).toEqual({
+        lessonId: snapshot.id,
+        downloadedAt,
+        title: snapshot.title,
+        description: snapshot.description,
+        origin: snapshot.origin,
+        sourceType: snapshot.source_type,
+        generated: snapshot.generated === true,
+        unit: snapshot.unit,
+        sentenceCount: snapshot.sentences.length,
+        activityCount: snapshot.blocks.filter(
+          block => block.type === 'activity',
+        ).length,
+        youtubeVideoId: snapshot.youtube?.video_id ?? null,
+        youtubeDurationMs: snapshot.youtube?.duration_ms ?? null,
+      });
+    });
+    expect(cards[1]).toMatchObject({
+      sourceType: 'youtube',
+      generated: true,
+      youtubeVideoId: 'abc123',
+      youtubeDurationMs: 272000,
+    });
   });
 
   it('changes the signature only when a download changes', () => {

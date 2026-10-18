@@ -65,6 +65,16 @@ export function readLessonCardLocalState(): LessonCardLocalState {
   } catch {
     downloadedIds.clear();
   }
+  return {
+    downloadedIds,
+    activityCounts,
+    downloads,
+    progress: readLessonProgress(),
+  };
+}
+
+/** How far the learner got in each lesson; empty when it cannot be read. */
+export function readLessonProgress(): ReadonlyMap<string, LessonCardProgress> {
   const progress = new Map<string, LessonCardProgress>();
   try {
     for (const lessonId of listInProgressLessonIds()) {
@@ -76,5 +86,5 @@ export function readLessonCardLocalState(): LessonCardLocalState {
   } catch {
     progress.clear();
   }
-  return {downloadedIds, activityCounts, downloads, progress};
+  return progress;
 }

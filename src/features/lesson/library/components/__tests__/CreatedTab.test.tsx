@@ -1,5 +1,4 @@
 import React from 'react';
-import {InteractionManager} from 'react-native';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 
 import {AppThemeProvider} from '@ui/theme';
@@ -29,18 +28,26 @@ jest.mock('@features/lesson/player', () => ({
   ComposeRequestCards: () => null,
 }));
 
-jest.mock('../../logic/useLibrarySegments', () => ({
-  useLibrarySegments: ({lessons}: {lessons: boolean}) => ({
-    packagedLessons: lessons
-      ? [
-          mockLesson('text', 'learner', 'learner_text'),
-          mockLesson('photo', 'learner', 'learner_ocr'),
-          mockLesson('video', 'learner', 'youtube'),
-          mockLesson('public', 'admin', 'admin_text'),
-        ]
-      : [],
+let mockStatus: 'loading' | 'ready' = 'ready';
+
+jest.mock('../../logic/useCreatedLessons', () => ({
+  useCreatedLessons: () => ({
+    status: mockStatus,
+    lessons:
+      mockStatus === 'ready'
+        ? [
+            mockLesson('text', 'learner', 'learner_text'),
+            mockLesson('photo', 'learner', 'learner_ocr'),
+            mockLesson('video', 'learner', 'youtube'),
+          ]
+        : [],
+    downloads: new Map([['video', {youtubeVideoId: 'abc123'}]]),
+    progress: new Map([['video', {state: 'in_progress', done: 3, total: 8}]]),
     refresh: jest.fn(),
   }),
+}));
+
+jest.mock('../../logic/useLibrarySegments', () => ({
   useRefreshOnRefocus: jest.fn(),
 }));
 
@@ -57,11 +64,6 @@ const mockLesson = (id: string, origin: string, sourceType: string) => ({
 });
 
 jest.mock('../../logic/lessonCardData', () => ({
-  EMPTY_LESSON_CARD_STATE: {progress: new Map(), downloads: new Map()},
-  readLessonCardLocalState: () => ({
-    downloads: new Map([['video', {youtubeVideoId: 'abc123'}]]),
-    progress: new Map([['video', {state: 'in_progress', done: 3, total: 8}]]),
-  }),
   useLessonBookmarks: () => ({
     isBookmarked: (id: string) => id === 'photo',
     toggleBookmark: mockToggle,
@@ -96,16 +98,24 @@ function render() {
 describe('CreatedTab', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest
-      .spyOn(InteractionManager, 'runAfterInteractions')
-      .mockImplementation((task?: any) => {
-        task?.();
-        return {cancel: jest.fn()} as any;
-      });
+    mockStatus = 'ready';
   });
 
-  it('lists only the lessons the learner made', () => {
+  it('lists the lessons the learner made', () => {
     expect(shownIds(render())).toEqual(['text', 'photo', 'video']);
+  });
+
+  it('shows placeholder cards while the lessons load, the header still live', () => {
+    mockStatus = 'loading';
+    const tree = render();
+    expect(
+      tree.root.findAllByProps({testID: 'library-created-loading'}),
+    ).not.toHaveLength(0);
+    expect(shownIds(tree)).toEqual([]);
+    act(() => {
+      tree.root.findByProps({testID: 'library-create-text'}).props.onPress();
+    });
+    expect(mockAppNavigation.openCreate).toHaveBeenCalledTimes(1);
   });
 
   it('shows a YouTube lesson as a video card with its thumbnail', () => {

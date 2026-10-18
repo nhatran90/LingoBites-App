@@ -1,13 +1,7 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useMemo, useRef} from 'react';
 import {useTranslation} from 'react-i18next';
-import {
-  ActivityIndicator,
-  FlatList,
-  InteractionManager,
-  Pressable,
-  StyleSheet,
-  View,
-} from 'react-native';
+import {FlatList, Pressable, StyleSheet, View} from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import {ComposeRequestCards} from '@features/lesson/player';
 
@@ -21,6 +15,8 @@ import {
   splitLessonTitle,
 } from '@ui/components/LessonCard';
 import type {CoverGlyph} from '@ui/components/LibraryCover';
+import {SkeletonGroup, skeletonRevealEntering} from '@ui/components/Skeleton';
+import {ToneCardSkeleton} from '@ui/components/ToneCard';
 import {type AppTheme, useAppTheme} from '@ui/theme';
 
 import {useAppNavigation} from '@core/navigation';
@@ -29,30 +25,19 @@ import type {LessonSourceType} from '@core/schemas/lesson';
 
 import {downloadedVideoCoverUrl} from '../../logic/catalogCover';
 import type {LibraryLessonCardView} from '../../logic/lesson';
-import {
-  EMPTY_LESSON_CARD_STATE,
-  readLessonCardLocalState,
-  useLessonBookmarks,
-} from '../../logic/lessonCardData';
-import {
-  getLibrarySection,
-  lessonBelongsToSection,
-} from '../../logic/librarySections';
-import {
-  useLibrarySegments,
-  useRefreshOnRefocus,
-} from '../../logic/useLibrarySegments';
+import {useLessonBookmarks} from '../../logic/lessonCardData';
+import {useCreatedLessons} from '../../logic/useCreatedLessons';
+import {useRefreshOnRefocus} from '../../logic/useLibrarySegments';
 import {type CardAction, ToneCard} from '../ExploreCards';
 import {LibraryEmptyState} from '../LibraryEmptyState';
 import {LibraryShelf} from '../LibraryShelf';
 import {cardToneAt} from '../libraryTones';
 import {ActionTile} from '../ToneTiles';
 
-/** The sections whose lessons the learner made themselves. */
-const CREATED_SECTIONS = [
-  getLibrarySection('mine'),
-  getLibrarySection('video'),
-];
+/** Placeholder cards while the lessons are read. */
+const SKELETON_CARDS = 3;
+/** Rows past this many arrive without the rise (they are off screen). */
+const REVEAL_ROWS = 6;
 
 /** "Từ YouTube": where an own lesson came from, above its title. */
 export function createdSourceLabel(sourceType: LessonSourceType): string {
@@ -104,31 +89,17 @@ export function CreatedTab() {
   const feedClearance = useFloatingTabBarClearance();
   const practiceEnabled = useFeatureEnabled('shortPractice');
   const {isBookmarked, toggleBookmark} = useLessonBookmarks();
-  // Read the lessons once the tab has been drawn, so switching to it is
-  // not held up by the local read.
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    const task = InteractionManager.runAfterInteractions(() => setReady(true));
-    return () => task.cancel();
-  }, []);
-  const {packagedLessons, refresh} = useLibrarySegments({lessons: ready});
+  // The lessons are read after the tab has been drawn, outside rendering;
+  // placeholder cards breathe in their place meanwhile.
+  const {status, lessons, downloads, progress, refresh} = useCreatedLessons({
+    practiceEnabled,
+  });
+  const loading = status === 'loading';
+  // The cards rise into place only when they replace the placeholders.
+  const revealRef = useRef(loading);
+  if (loading) revealRef.current = true;
 
   useRefreshOnRefocus(refresh);
-
-  const lessons = useMemo(
-    () =>
-      packagedLessons.filter(lesson =>
-        CREATED_SECTIONS.some(section =>
-          lessonBelongsToSection(section, lesson),
-        ),
-      ),
-    [packagedLessons],
-  );
-  const localState = useMemo(
-    () =>
-      lessons.length > 0 ? readLessonCardLocalState() : EMPTY_LESSON_CARD_STATE,
-    [lessons],
-  );
 
   const renderLesson = ({
     item,
@@ -137,74 +108,85 @@ export function CreatedTab() {
     item: LibraryLessonCardView;
     index: number;
   }) => {
-    const progress = localState.progress.get(item.id);
+    const lessonProgress = progress.get(item.id);
     const duration = lessonCardDurationLabel({
       youtubeDurationMs: item.youtubeDurationMs,
       estimatedMinutes: item.durationMin,
     });
     return (
-      <ToneCard
-        accessibilityHint="Bài học đã tải về. Chạm để học."
-        action={createdAction(progress)}
-        bookmark={{
-          saved: isBookmarked(item.id),
-          onToggle: () =>
-            toggleBookmark({
-              lessonId: item.id,
-              title: item.title,
-              sourceType: item.sourceType,
-              sentenceCount: item.vocabularyCount,
-              estimatedMinutes: null,
-              contextLabel: item.contextLabel ?? null,
-            }),
-        }}
-        cover={{
-          imageUrl: downloadedVideoCoverUrl(localState, item.id),
-          glyph: COVER_GLYPHS[lessonCardKind(item.sourceType)],
-        }}
-        description={[
-          item.vocabularyCount > 0 ? `${item.vocabularyCount} câu` : null,
-          duration,
-          createdProgressLabel(progress),
-        ]
-          .filter(Boolean)
-          .join(' · ')}
-        eyebrow={createdSourceLabel(item.sourceType)}
-        footer={
-          practiceEnabled && item.practiceReady ? (
-            <Pressable
-              accessibilityHint={t('practice.entry_hint')}
-              accessibilityLabel={t('library.practice_a11y', {
-                title: item.title,
-              })}
-              accessibilityRole="button"
-              onPress={() => appNavigation.openPractice(item.id)}
-              style={styles.practice}
-              testID={`lesson-practice-${item.id}`}
-            >
-              <AppText color="primary" variant="label">
-                {t('practice.entry_button')}
-              </AppText>
-            </Pressable>
-          ) : undefined
+      <Animated.View
+        entering={
+          revealRef.current && index < REVEAL_ROWS
+            ? skeletonRevealEntering(index)
+            : undefined
         }
-        gutter={theme.gutter}
-        onPress={() => appNavigation.openLesson(item.id)}
-        testID={`lesson-item-${item.id}`}
-        title={splitLessonTitle(item.title).title}
-        tone={cardToneAt(index)}
-        video={lessonCardKind(item.sourceType) === 'video'}
-      />
+      >
+        <ToneCard
+          accessibilityHint="Bài học đã tải về. Chạm để học."
+          action={createdAction(lessonProgress)}
+          bookmark={{
+            saved: isBookmarked(item.id),
+            onToggle: () =>
+              toggleBookmark({
+                lessonId: item.id,
+                title: item.title,
+                sourceType: item.sourceType,
+                sentenceCount: item.vocabularyCount,
+                estimatedMinutes: null,
+                contextLabel: item.contextLabel ?? null,
+              }),
+          }}
+          cover={{
+            imageUrl: downloadedVideoCoverUrl({downloads}, item.id),
+            glyph: COVER_GLYPHS[lessonCardKind(item.sourceType)],
+          }}
+          description={[
+            item.vocabularyCount > 0 ? `${item.vocabularyCount} câu` : null,
+            duration,
+            createdProgressLabel(lessonProgress),
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+          eyebrow={createdSourceLabel(item.sourceType)}
+          footer={
+            practiceEnabled && item.practiceReady ? (
+              <Pressable
+                accessibilityHint={t('practice.entry_hint')}
+                accessibilityLabel={t('library.practice_a11y', {
+                  title: item.title,
+                })}
+                accessibilityRole="button"
+                onPress={() => appNavigation.openPractice(item.id)}
+                style={styles.practice}
+                testID={`lesson-practice-${item.id}`}
+              >
+                <AppText color="primary" variant="label">
+                  {t('practice.entry_button')}
+                </AppText>
+              </Pressable>
+            ) : undefined
+          }
+          gutter={theme.gutter}
+          onPress={() => appNavigation.openLesson(item.id)}
+          testID={`lesson-item-${item.id}`}
+          title={splitLessonTitle(item.title).title}
+          tone={cardToneAt(index)}
+          video={lessonCardKind(item.sourceType) === 'video'}
+        />
+      </Animated.View>
     );
   };
 
   return (
     <FlatList
       ListEmptyComponent={
-        ready ? (
-          <LibraryEmptyState type="lessons" />
+        loading ? (
+          <CreatedLessonsSkeleton
+            gap={theme.spacing.lg}
+            gutter={theme.gutter}
+          />
         ) : (
-          <ActivityIndicator color={theme.colors.primary} />
+          <LibraryEmptyState type="lessons" />
         )
       }
       ListHeaderComponent={
@@ -248,11 +230,30 @@ export function CreatedTab() {
         </View>
       }
       contentContainerStyle={[styles.content, {paddingBottom: feedClearance}]}
-      data={ready ? lessons : []}
+      data={lessons}
       keyExtractor={item => item.id}
       renderItem={renderLesson}
       testID="library-created-tab"
     />
+  );
+}
+
+/** Placeholder lesson cards, breathing in step, while the lessons load. */
+function CreatedLessonsSkeleton({gap, gutter}: {gap: number; gutter: number}) {
+  return (
+    <SkeletonGroup
+      motion="pulse"
+      style={{gap}}
+      testID="library-created-loading"
+    >
+      {Array.from({length: SKELETON_CARDS}, (_, index) => (
+        <ToneCardSkeleton
+          gutter={gutter}
+          key={index}
+          tone={cardToneAt(index)}
+        />
+      ))}
+    </SkeletonGroup>
   );
 }
 

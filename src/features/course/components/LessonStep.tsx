@@ -5,6 +5,7 @@ import {AppText} from '@ui/components/AppText';
 import type {LessonCardProgress} from '@ui/components/LessonCard';
 import {MaterialIcon} from '@ui/components/MaterialIcon';
 import {SaveToggle} from '@ui/components/SaveToggle';
+import {SkeletonBlock} from '@ui/components/Skeleton';
 import type {HandoffIconName} from '@ui/icons/iconRegistry';
 import {type AppTheme, useAppTheme} from '@ui/theme';
 
@@ -185,6 +186,49 @@ export function LessonStep({
   );
 }
 
+/**
+ * A lesson step while the unit loads: its numbered dot and line, and a card
+ * with a picture block and placeholder lines. Place inside a
+ * `SkeletonGroup`.
+ */
+export function LessonStepSkeleton({
+  number,
+  gap,
+}: {
+  number: number;
+  gap: number;
+}) {
+  const {theme} = useAppTheme();
+  const themedStyles = useMemo(() => makeStyles(theme), [theme]);
+  return (
+    <View style={styles.row}>
+      <View style={styles.rail}>
+        <View style={themedStyles.dot}>
+          <AppText style={themedStyles.dotText}>{number}</AppText>
+        </View>
+        <RouteLine overhang={gap} />
+      </View>
+      <View style={styles.card}>
+        <CurriculumSurface faceStyle={styles.face}>
+          <View style={styles.body}>
+            <SkeletonBlock height={58} radius={16} width={58} />
+            <View style={styles.skeletonCopy}>
+              <SkeletonBlock height={14} width="75%" />
+              <SkeletonBlock height={11} width="90%" />
+              <SkeletonBlock
+                height={20}
+                radius={theme.radius.pill}
+                style={styles.skeletonTag}
+                width={72}
+              />
+            </View>
+          </View>
+        </CurriculumSurface>
+      </View>
+    </View>
+  );
+}
+
 function buildTags({
   durationLabel,
   downloaded,
@@ -269,6 +313,15 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     gap: 12,
+  },
+  skeletonCopy: {
+    flex: 1,
+    gap: 6,
+    minWidth: 0,
+    paddingTop: 2,
+  },
+  skeletonTag: {
+    marginTop: 2,
   },
   tags: {
     flexDirection: 'row',

@@ -11,7 +11,8 @@
  * Keep this in sync with the Reanimated surface actually used in src:
  * Animated.View, Animated.FlatList, Easing, interpolateColor,
  * useAnimatedScrollHandler, useAnimatedStyle, useReducedMotion,
- * useSharedValue, withTiming. Extend only when a
+ * useSharedValue, withTiming, withRepeat, cancelAnimation, interpolate and
+ * the FadeIn/FadeOut/FadeInDown layout animations. Extend only when a
  * component needs more.
  */
 const React = require('react');
@@ -83,6 +84,47 @@ function withDelay(_, animation) {
   return animation;
 }
 
+function withRepeat(animation) {
+  return animation;
+}
+
+function cancelAnimation() {}
+
+/** Linear interpolation, clamped like Extrapolation.CLAMP. */
+function interpolate(value, inputRange, outputRange) {
+  const [x0, x1] = [inputRange[0], inputRange[inputRange.length - 1]];
+  const [y0, y1] = [outputRange[0], outputRange[outputRange.length - 1]];
+  if (x1 === x0) {
+    return y0;
+  }
+  const t = Math.min(1, Math.max(0, (value - x0) / (x1 - x0)));
+  return y0 + (y1 - y0) * t;
+}
+
+/**
+ * Layout animations (`entering` / `exiting`) do nothing in Jest: a builder
+ * whose chain methods all return the builder itself.
+ */
+function layoutAnimation() {
+  const builder = {};
+  for (const name of [
+    'delay',
+    'duration',
+    'easing',
+    'reduceMotion',
+    'springify',
+    'withCallback',
+    'withInitialValues',
+  ]) {
+    builder[name] = () => builder;
+  }
+  return builder;
+}
+
+const FadeIn = layoutAnimation();
+const FadeOut = layoutAnimation();
+const FadeInDown = layoutAnimation();
+
 function createAnimatedComponent(Component) {
   return Component;
 }
@@ -125,6 +167,11 @@ module.exports = {
   FlatList,
   createAnimatedComponent,
   Easing,
+  FadeIn,
+  FadeInDown,
+  FadeOut,
+  cancelAnimation,
+  interpolate,
   interpolateColor,
   ReduceMotion,
   useAnimatedScrollHandler,
@@ -132,6 +179,7 @@ module.exports = {
   useReducedMotion,
   useSharedValue,
   withDelay,
+  withRepeat,
   withSequence,
   withSpring,
   withTiming,

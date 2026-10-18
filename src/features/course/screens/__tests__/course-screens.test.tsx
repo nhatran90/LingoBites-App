@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactTestRenderer, {act} from 'react-test-renderer';
 
+import {AppText} from '@ui/components/AppText';
 import {AppThemeProvider} from '@ui/theme';
 
 import {setLearnerAgeGroup} from '@core/learning';
@@ -9,6 +10,7 @@ import {FeatureFlagProvider} from '@core/release';
 import {mockAppNavigation} from '@test/support';
 
 import {CourseListContent} from '../../components/CourseListContent';
+import {clearCurriculumCacheForTests} from '../../logic/useCurriculum';
 import {CourseLevelsScreen} from '../CourseLevelsScreen';
 import {LevelUnitsScreen} from '../LevelUnitsScreen';
 import {UnitLessonsScreen} from '../UnitLessonsScreen';
@@ -113,6 +115,7 @@ const nav = () => navigation as unknown as ReturnType<typeof makeNavigation>;
 
 beforeEach(() => {
   jest.clearAllMocks();
+  clearCurriculumCacheForTests();
   navigation = makeNavigation() as never;
   listCompletedLessons.mockReturnValue([]);
 });
@@ -670,5 +673,71 @@ describe('Curriculum screens (F14)', () => {
       tree.root.findAll(node => node.props.testID === 'course-list-empty')
         .length,
     ).toBeGreaterThan(0);
+  });
+
+  it('keeps the header and shows placeholders while courses load', async () => {
+    client.fetchCourses.mockReturnValue(new Promise(() => {}));
+
+    const tree = await render(
+      <CourseListContent header={<AppText>Khóa học</AppText>} />,
+    );
+
+    expect(allText(tree)).toContain('Khóa học');
+    expect(
+      tree.root.findAll(node => node.props.testID === 'course-list-loading')
+        .length,
+    ).toBeGreaterThan(0);
+    act(() => tree.unmount());
+  });
+
+  it('shows a unit cover and title from the route while lessons load', async () => {
+    client.fetchUnitLessons.mockReturnValue(new Promise(() => {}));
+
+    const tree = await render(
+      <UnitLessonsScreen
+        navigation={navigation}
+        route={
+          {
+            key: 'unit',
+            params: {unitId: 'unit-1', title: 'Greetings', levelCode: 'A1'},
+          } as never
+        }
+      />,
+    );
+
+    expect(
+      tree.root.findAll(node => node.props.testID === 'unit-lessons-cover')
+        .length,
+    ).toBeGreaterThan(0);
+    expect(allText(tree)).toContain('Greetings');
+    expect(
+      tree.root.findAll(node => node.props.testID === 'unit-lessons-loading')
+        .length,
+    ).toBeGreaterThan(0);
+    act(() => tree.unmount());
+  });
+
+  it('shows a course loaded earlier at once while it refreshes', async () => {
+    const course = {
+      id: 'course-1',
+      slug: 'english-a1',
+      title: 'English A1',
+      description: '',
+      sourceLanguage: 'vi',
+      targetLanguage: 'en',
+    };
+    client.fetchCourses.mockResolvedValue({ok: true, value: [course]});
+    const first = await render(<CourseListContent />);
+    act(() => first.unmount());
+
+    client.fetchCourses.mockReturnValue(new Promise(() => {}));
+    const second = await render(<CourseListContent />);
+
+    expect(allText(second)).toContain('English A1');
+    expect(
+      second.root.findAll(node => node.props.testID === 'course-list-loading')
+        .length,
+    ).toBe(0);
+    act(() => second.unmount());
   });
 });

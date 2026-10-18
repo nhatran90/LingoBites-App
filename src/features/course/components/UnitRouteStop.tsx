@@ -4,6 +4,7 @@ import {Pressable, StyleSheet, View} from 'react-native';
 import Svg, {Circle} from 'react-native-svg';
 
 import {AppText} from '@ui/components/AppText';
+import {SkeletonBlock} from '@ui/components/Skeleton';
 import {type AppTheme, useAppTheme} from '@ui/theme';
 
 import {type UnitProgress, unitProgressRatio} from '../logic/unitProgress';
@@ -174,6 +175,29 @@ export function UnitRouteStop({
   );
 }
 
+/**
+ * A unit stop while the level loads: a round cover block on the route line
+ * and a card with placeholder lines. Place inside a `SkeletonGroup`.
+ */
+export function UnitRouteStopSkeleton({gap}: {gap: number}) {
+  return (
+    <View style={styles.row}>
+      <View style={styles.rail}>
+        <SkeletonBlock height={NODE} radius={NODE / 2} width={NODE} />
+        <RouteLine overhang={gap} />
+      </View>
+      <View style={styles.card}>
+        <CurriculumSurface faceStyle={styles.skeletonFace}>
+          <SkeletonBlock height={11} width="30%" />
+          <SkeletonBlock height={16} width="80%" />
+          <SkeletonBlock height={12} width="95%" />
+          <SkeletonBlock height={8} radius={4} style={styles.skeletonBar} />
+        </CurriculumSurface>
+      </View>
+    </View>
+  );
+}
+
 type Chip = {label: string; tone: 'done' | 'current'};
 
 function stateChip(
@@ -227,6 +251,12 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     gap: 12,
+  },
+  skeletonBar: {
+    marginTop: 4,
+  },
+  skeletonFace: {
+    gap: 8,
   },
 });
 

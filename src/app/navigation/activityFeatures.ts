@@ -50,6 +50,7 @@ const ROUTE_FEATURES: Record<string, ActivityFeature> = {
   PrivacyNote: 'profile',
   ProgressReport: 'profile',
   LearningProfile: 'profile',
+  PronunciationSettings: 'profile',
 };
 
 export function activityFeatureForRoute(

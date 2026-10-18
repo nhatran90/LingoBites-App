@@ -19,6 +19,7 @@ import {
 } from '../usePronunciationPractice';
 
 const ITEM_ID = '44444444-4444-4444-8444-444444444444';
+const TARGET = {source: 'lesson', itemId: ITEM_ID} as const;
 const RECORDING_ID = '55555555-5555-4555-8555-555555555555';
 
 const SCORED: PronunciationAttempt = {
@@ -79,7 +80,7 @@ let fakes: Fakes;
 let appStateListener: ((state: AppStateStatus) => void) | null;
 
 function Probe({deps}: {deps: Partial<PracticeDeps>}) {
-  latest = usePronunciationPractice(ITEM_ID, deps);
+  latest = usePronunciationPractice(TARGET, deps);
   return null;
 }
 
@@ -174,7 +175,7 @@ describe('usePronunciationPractice', () => {
       expect.stringMatching(/^pronunciation-/),
     );
     expect(fakes.submitReading).toHaveBeenCalledWith({
-      itemId: ITEM_ID,
+      target: TARGET,
       durationMs: 2400,
       file: {byteSize: 2048, sha256: 'b'.repeat(64), binary: expect.anything()},
     });

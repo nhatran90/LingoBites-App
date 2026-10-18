@@ -126,7 +126,8 @@ function PracticeBody({
 }) {
   const {theme} = useAppTheme();
   const {t} = useTranslation();
-  const practice = usePronunciationPractice(itemId, deps);
+  const target = useMemo(() => ({source: 'lesson' as const, itemId}), [itemId]);
+  const practice = usePronunciationPractice(target, deps);
   const {state} = practice;
   const elapsed = useElapsedSeconds(state.phase === 'recording');
 

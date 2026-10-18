@@ -1,9 +1,18 @@
-import type ReactTestRenderer from 'react-test-renderer';
-import {act} from 'react-test-renderer';
+import React from 'react';
+import ReactTestRenderer, {act} from 'react-test-renderer';
 
+import {resetPronunciationAvailabilityForTests} from '@features/pronunciation';
+import {setPronunciationConsent} from '@features/speaking';
+
+import {AppThemeProvider} from '@ui/theme';
+
+import {getAppConfig} from '@core/api/appConfig';
 import type {QuizQuestion} from '@core/learning/packQuiz';
+import {FeatureFlagProvider} from '@core/release';
 import type {CatalogItem} from '@core/schemas/lesson';
 
+import {makeTestReleaseConfig, THEME_UI_FLAGS} from '@test/support';
+import {mockAppNavigation} from '@test/support/appNavigationMock';
 import {has, press, renderWithTheme, textOf} from '@test/support/lessonFlow';
 
 import {learnWordPack} from '../../logic/wordPathClient';
@@ -15,6 +24,25 @@ import {QuickKnownCheckScreen} from '../QuickKnownCheckScreen';
 jest.mock('../../logic/wordPathClient', () => ({
   learnWordPack: jest.fn(),
 }));
+
+jest.mock('@core/api/appConfig', () => ({
+  getAppConfig: jest.fn(),
+}));
+
+/** What `/v1/capabilities` answers about pronunciation scoring. */
+function serverScores(enabled: boolean) {
+  (global as {fetch?: unknown}).fetch = jest.fn(async () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({
+      capabilities: {youtube: {enabled: true}, pronunciation: {enabled}},
+    }),
+  }));
+}
+
+async function flush() {
+  await act(async () => undefined);
+}
 
 const mockLearn = learnWordPack as jest.MockedFunction<typeof learnWordPack>;
 
@@ -170,5 +198,82 @@ describe('PackLearnScreen', () => {
     expect(packId).toBe('pack-2');
     expect(body.mode).toBe('learn');
     expect([...body.itemCodes].sort()).toEqual(['word:coffee', 'word:tea']);
+  });
+});
+
+describe('PackLearnScreen "Nói từ"', () => {
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    resetPronunciationAvailabilityForTests();
+    (getAppConfig as jest.Mock).mockReturnValue({
+      apiBaseUrl: 'https://api.lingobites.app',
+    });
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    setPronunciationConsent('off');
+  });
+
+  function renderPack() {
+    let tree!: ReactTestRenderer.ReactTestRenderer;
+    act(() => {
+      tree = ReactTestRenderer.create(
+        <FeatureFlagProvider
+          releaseConfig={makeTestReleaseConfig({
+            ...THEME_UI_FLAGS,
+            pronunciationSupport: true,
+          })}
+        >
+          <AppThemeProvider>
+            <PackLearnScreen
+              items={[coffee, tea]}
+              route={{params: {packId: 'pack-2'}}}
+            />
+          </AppThemeProvider>
+        </FeatureFlagProvider>,
+      );
+    });
+    return tree;
+  }
+
+  it('is locked until scoring is turned on, and leads to Settings', async () => {
+    serverScores(true);
+    setPronunciationConsent('off');
+    const tree = renderPack();
+    await flush();
+    expect(has(tree, 'pack-learn-speak-word-locked')).toBe(true);
+    press(tree, 'pack-learn-speak-word');
+    expect(mockAppNavigation.openPronunciationSettings).toHaveBeenCalledTimes(
+      1,
+    );
+    expect(has(tree, 'pack-learn-speak-panel')).toBe(false);
+
+    // Turned on in Settings: the button unlocks without leaving the card.
+    act(() => setPronunciationConsent('on'));
+    expect(has(tree, 'pack-learn-speak-word-locked')).toBe(false);
+  });
+
+  it('opens the reading panel in place of the card, and goes back to it', async () => {
+    serverScores(true);
+    setPronunciationConsent('on');
+    const tree = renderPack();
+    await flush();
+    press(tree, 'pack-learn-speak-word');
+    expect(has(tree, 'pack-learn-speak-panel')).toBe(true);
+    expect(textOf(tree, 'pack-learn-speak-text')).toBe('coffee');
+    expect(has(tree, 'pack-learn-next-card')).toBe(false);
+    press(tree, 'pack-learn-speak-cancel');
+    expect(has(tree, `pack-learn-card-${coffee.code}`)).toBe(true);
+    expect(mockLearn).not.toHaveBeenCalled();
+  });
+
+  it('is not offered where the Server does not score pronunciation', async () => {
+    serverScores(false);
+    setPronunciationConsent('on');
+    const tree = renderPack();
+    await flush();
+    expect(has(tree, 'pack-learn-speak-word')).toBe(false);
   });
 });

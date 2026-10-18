@@ -39,8 +39,9 @@ export function PronunciationSettingsRow() {
       />
       <View style={themedStyles.row}>
         <AppText color="secondary" style={themedStyles.flex} variant="caption">
-          Gửi giọng đọc ở phần Luyện phát âm tới Microsoft Azure Speech để chấm.
-          Bản ghi bị xoá ngay sau khi chấm, chỉ giữ lại điểm.
+          Gửi giọng đọc ở Luyện phát âm, Gói từ, Ôn từ và Ôn câu tới Microsoft
+          Azure Speech để chấm. Bản ghi bị xoá ngay sau khi chấm, chỉ giữ lại
+          điểm.
         </AppText>
         <AppSwitch
           accessibilityHint="Bật hoặc tắt chấm phát âm bằng máy"

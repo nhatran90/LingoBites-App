@@ -16,6 +16,8 @@ import {
 } from '@core/schemas/pronunciation';
 import {PRONUNCIATION_MAX_DURATION_MS} from '@core/schemas/recordings';
 
+import type {ReadingTarget} from './readingTarget';
+
 /**
  * Pronunciation step 3: the Server side of a reading. The learner waits for
  * the result, so a reading is sent at once and never queued: without a
@@ -94,7 +96,7 @@ function failureOf(errorCode: string): SubmitReadingFailure {
 
 /** Creates the reading on the Server and uploads its audio. */
 export async function submitReading(
-  input: {itemId: string; durationMs: number; file: ReadingFile},
+  input: {target: ReadingTarget; durationMs: number; file: ReadingFile},
   options: {fetchImpl?: typeof fetch; signal?: AbortSignal} = {},
 ): Promise<SubmitReadingResult> {
   const clientOptions = {
@@ -106,7 +108,10 @@ export async function submitReading(
     {
       client_recording_id: createRequestId(),
       mode: 'pronunciation',
-      item_id: input.itemId,
+      source: input.target.source,
+      ...('itemId' in input.target
+        ? {item_id: input.target.itemId}
+        : {reference_text: input.target.referenceText}),
       duration_ms: Math.min(
         PRONUNCIATION_MAX_DURATION_MS,
         Math.max(1, Math.round(input.durationMs)),

@@ -62,6 +62,7 @@ import {
   ProgressReportScreen,
   SupportAboutScreen,
 } from '@features/profile';
+import {PronunciationSettingsScreen} from '@features/pronunciation';
 import {DailyReviewScreen, ItemReviewScreen} from '@features/review';
 import {
   ShadowingLessonPickerScreen,
@@ -127,7 +128,7 @@ const HIDDEN_HEADER = {headerShown: false} as const;
  *      CanonicalLessonPlayer, LibraryList, VideoHub,
  *      LessonFlowPlayer, DailyReview, Practice, Today,
  *      SpeakingRoom, ShadowingLessonPicker, ShadowingSession,
- *      ShadowingSummary
+ *      ShadowingSummary, PronunciationSettings
  *
  * Features navigate through `useAppNavigation()` (see
  * `appNavigationAdapter.ts`), never by reaching into a parent navigator.
@@ -377,6 +378,10 @@ function AuthenticatedRootStack() {
       <RootStack.Screen
         component={ShadowingSummaryScreen}
         name="ShadowingSummary"
+      />
+      <RootStack.Screen
+        component={PronunciationSettingsScreen}
+        name="PronunciationSettings"
       />
     </RootStack.Navigator>
   );

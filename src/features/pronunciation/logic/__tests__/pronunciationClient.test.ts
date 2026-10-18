@@ -31,6 +31,7 @@ const mockedAuthFetch = authenticatedFetch as jest.Mock;
 
 const API = 'https://api.lingobites.app';
 const ITEM_ID = '44444444-4444-4444-8444-444444444444';
+const LESSON_TARGET = {source: 'lesson', itemId: ITEM_ID} as const;
 const RECORDING_ID = '55555555-5555-4555-8555-555555555555';
 const FILE = {
   byteSize: 2048,
@@ -149,7 +150,7 @@ describe('submitReading', () => {
       .mockResolvedValueOnce({ok: true, status: 200});
 
     const result = await submitReading({
-      itemId: ITEM_ID,
+      target: {source: 'lesson', itemId: ITEM_ID},
       durationMs: 3210.6,
       file: FILE,
     });
@@ -161,6 +162,7 @@ describe('submitReading', () => {
     expect(body).toEqual({
       client_recording_id: expect.stringMatching(/^[0-9a-f-]{36}$/),
       mode: 'pronunciation',
+      source: 'lesson',
       item_id: ITEM_ID,
       duration_ms: 3211,
       mime_type: 'audio/mp4',
@@ -183,11 +185,30 @@ describe('submitReading', () => {
     expect(await uploadGate()).toBe(false);
   });
 
+  it('sends a saved word by its own text, under its source', async () => {
+    mockedAuthFetch
+      .mockResolvedValueOnce(CREATED)
+      .mockResolvedValueOnce({ok: true, status: 200});
+    await submitReading({
+      target: {source: 'review_word', referenceText: 'thorough'},
+      durationMs: 1200,
+      file: FILE,
+    });
+    const body = JSON.parse(mockedAuthFetch.mock.calls[0][1].body as string);
+    expect(body.source).toBe('review_word');
+    expect(body.reference_text).toBe('thorough');
+    expect(body).not.toHaveProperty('item_id');
+  });
+
   it('keeps the duration within what the Server accepts', async () => {
     mockedAuthFetch
       .mockResolvedValueOnce(CREATED)
       .mockResolvedValueOnce({ok: true, status: 200});
-    await submitReading({itemId: ITEM_ID, durationMs: 15_400, file: FILE});
+    await submitReading({
+      target: LESSON_TARGET,
+      durationMs: 15_400,
+      file: FILE,
+    });
     expect(
       JSON.parse(mockedAuthFetch.mock.calls[0][1].body as string).duration_ms,
     ).toBe(15_000);
@@ -220,7 +241,7 @@ describe('submitReading', () => {
       mockedAuthFetch.mockReset();
       mockedAuthFetch.mockImplementationOnce(respond);
       await expect(
-        submitReading({itemId: ITEM_ID, durationMs: 2000, file: FILE}),
+        submitReading({target: LESSON_TARGET, durationMs: 2000, file: FILE}),
       ).resolves.toEqual({ok: false, reason});
       expect(mockedAuthFetch).toHaveBeenCalledTimes(1);
     }
@@ -231,7 +252,7 @@ describe('submitReading', () => {
       .mockResolvedValueOnce(CREATED)
       .mockRejectedValueOnce(new TypeError('Network request failed'));
     await expect(
-      submitReading({itemId: ITEM_ID, durationMs: 2000, file: FILE}),
+      submitReading({target: LESSON_TARGET, durationMs: 2000, file: FILE}),
     ).resolves.toEqual({ok: false, reason: 'offline'});
   });
 });

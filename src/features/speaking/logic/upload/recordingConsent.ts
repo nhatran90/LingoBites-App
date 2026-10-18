@@ -97,6 +97,22 @@ export function isPronunciationConsentOn(): boolean {
   return readPronunciationConsent() === 'on';
 }
 
+const pronunciationConsentListeners = new Set<() => void>();
+
+/**
+ * Called after every change of the pronunciation consent, so a card's
+ * "Nói từ" button unlocks as soon as the learner turns it on in Settings.
+ * Returns the unsubscribe.
+ */
+export function subscribePronunciationConsent(
+  listener: () => void,
+): () => void {
+  pronunciationConsentListeners.add(listener);
+  return () => {
+    pronunciationConsentListeners.delete(listener);
+  };
+}
+
 /** Records the learner's answer to the consent question (or the settings switch). */
 export function setPronunciationConsent(
   value: 'on' | 'off',
@@ -105,6 +121,7 @@ export function setPronunciationConsent(
   const at = now.toISOString();
   writeSetting(PRONUNCIATION_CONSENT_KEY, value, at);
   writeSetting(PRONUNCIATION_CONSENT_ASKED_AT_KEY, at, at);
+  for (const listener of pronunciationConsentListeners) listener();
 }
 
 /** Ask when undecided, or again 7 days after a "no". */

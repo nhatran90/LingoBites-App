@@ -5,6 +5,12 @@ import {Pressable, ScrollView, StyleSheet, View} from 'react-native';
 import {SpeechNotice, useSpeak} from '@features/audio';
 import {listComboSentenceSetsFor} from '@features/combo';
 import {startReviewSession} from '@features/engagement';
+import {
+  cardReadingTarget,
+  SpeakWordButton,
+  SpeakWordPanel,
+  useSpeakWordAccess,
+} from '@features/pronunciation';
 import {requestSync} from '@features/sync';
 
 import {ActionIconButton} from '@ui/components/ActionIconButton';
@@ -20,6 +26,7 @@ import {type AppTheme, useAppTheme} from '@ui/theme';
 
 import {createRequestId} from '@core/api/requestId';
 import {questionFor, type QuizQuestion} from '@core/learning/packQuiz';
+import {useAppNavigation} from '@core/navigation';
 import {lapsesOf} from '@core/sync/learningOutcomes';
 
 import {ApplyExerciseCard} from '../components/ApplyExerciseCard';
@@ -104,6 +111,10 @@ export function ItemReviewScreen({navigation, queue: given}: Props) {
   const [revealed, setRevealed] = useState(false);
   // "Viết từ": write the word before recalling (practice only).
   const [writing, setWriting] = useState(false);
+  // "Nói từ": read the card aloud for scoring before recalling (practice only).
+  const [speaking, setSpeaking] = useState(false);
+  const speakAccess = useSpeakWordAccess();
+  const appNavigation = useAppNavigation();
   const [shownAt, setShownAt] = useState(() => Date.now());
   const [results, setResults] = useState<ItemReviewResult[]>([]);
   const [failed, setFailed] = useState(false);
@@ -132,6 +143,18 @@ export function ItemReviewScreen({navigation, queue: given}: Props) {
     );
   }, [current, index]);
   const recall = !recognition && exercise === null;
+  const speakTarget = current
+    ? cardReadingTarget({
+        place: 'review',
+        text: current.item.text,
+        itemId: current.item.id,
+        kind: current.item.kind,
+      })
+    : null;
+  const openSpeaking = () =>
+    speakAccess === 'ready'
+      ? setSpeaking(true)
+      : appNavigation.openPronunciationSettings();
 
   const finishSession = () => {
     const outcome = session.finish();
@@ -143,6 +166,7 @@ export function ItemReviewScreen({navigation, queue: given}: Props) {
     setIndex(value => value + 1);
     setRevealed(false);
     setWriting(false);
+    setSpeaking(false);
     setChosen(null);
     setCompared(false);
     setShownAt(Date.now());
@@ -208,6 +232,7 @@ export function ItemReviewScreen({navigation, queue: given}: Props) {
     setIndex(0);
     setRevealed(false);
     setWriting(false);
+    setSpeaking(false);
     setChosen(null);
     setCompared(false);
     setShownAt(Date.now());
@@ -304,7 +329,22 @@ export function ItemReviewScreen({navigation, queue: given}: Props) {
             word={current.item.text}
           />
         ) : null}
-        {current && !showCompare && recall && !writing ? (
+        {current && !showCompare && recall && speaking && speakTarget ? (
+          <SpeakWordPanel
+            ipa={current.item.ipa ? formatIpa(current.item.ipa) : null}
+            key={current.item.code}
+            meaningVi={current.item.meaning_vi}
+            onDone={() => {
+              setSpeaking(false);
+              setRevealed(true);
+            }}
+            onSpeak={say}
+            target={speakTarget}
+            testID="item-review-speak"
+            text={current.item.text}
+          />
+        ) : null}
+        {current && !showCompare && recall && !writing && !speaking ? (
           <AppCard testID={`item-review-card-${current.item.code}`}>
             <View style={themedStyles.row}>
               <Pressable
@@ -331,6 +371,14 @@ export function ItemReviewScreen({navigation, queue: given}: Props) {
               <WriteWordButton
                 onPress={() => setWriting(true)}
                 testID="item-review-write-word"
+                text={current.item.text}
+              />
+            ) : null}
+            {speakTarget && speakAccess !== 'hidden' ? (
+              <SpeakWordButton
+                locked={speakAccess === 'locked'}
+                onPress={openSpeaking}
+                testID="item-review-speak-word"
                 text={current.item.text}
               />
             ) : null}

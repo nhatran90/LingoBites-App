@@ -59,14 +59,17 @@ export type CreateLessonTaskRecordingRequest = z.infer<
 export const PRONUNCIATION_MAX_DURATION_MS = 15_000;
 
 /**
- * Pronunciation step 3: one pronunciation item read aloud, uploaded for
- * scoring (Server `CreatePronunciationRecordingRequestSchema`).
+ * Pronunciation step 3: one item read aloud, uploaded for scoring (Server
+ * `CreatePronunciationRecordingRequestSchema`). `source` says where it was
+ * read; a saved word without an item sends `reference_text` instead.
  */
 export const CreatePronunciationRecordingRequestSchema = z
   .object({
     client_recording_id: z.string().guid(),
     mode: z.literal('pronunciation'),
-    item_id: z.string().guid(),
+    source: z.enum(['lesson', 'pack', 'review_word', 'review_sentence']),
+    item_id: z.string().guid().optional(),
+    reference_text: z.string().min(1).max(120).optional(),
     duration_ms: z.number().int().min(1).max(PRONUNCIATION_MAX_DURATION_MS),
     mime_type: z.string().min(1).max(127),
     byte_size: z.number().int(),

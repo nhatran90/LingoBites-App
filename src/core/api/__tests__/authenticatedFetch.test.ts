@@ -1,9 +1,11 @@
 import Config from 'react-native-config';
+import DeviceInfo from 'react-native-device-info';
 
 import {SyncOwnershipChangedError} from '@core/sync/syncDrainOwnership';
 
 import {ensureValidSession} from '../../auth/authSession';
 import {authenticatedFetch} from '../authenticatedFetch';
+import {resetDeviceHeadersForTests} from '../deviceHeaders';
 
 jest.mock('../../auth/authClient', () => ({
   createAuthClient: jest.fn(() => ({})),
@@ -109,6 +111,21 @@ describe('authenticatedFetch app version header', () => {
     const headers = fetchImpl.mock.calls[0][1].headers;
     expect(headers['X-App-Version']).toBe('1.0.1');
     expect(headers['X-App-Platform']).toBe('ios');
+  });
+
+  it('sends the OS version and device model', async () => {
+    resetDeviceHeadersForTests();
+    (DeviceInfo.getSystemVersion as jest.Mock).mockReturnValueOnce('18.1');
+    (DeviceInfo.getModel as jest.Mock).mockReturnValueOnce('iPhone 15');
+    await authenticatedFetch(
+      'https://api.test/v1/library/tenses',
+      {method: 'GET'},
+      fetchImpl,
+    );
+
+    const headers = fetchImpl.mock.calls[0][1].headers;
+    expect(headers['X-OS-Version']).toBe('18.1');
+    expect(headers['X-Device-Model']).toBe('iPhone 15');
   });
 
   it('leaves the header out when the version is not set', async () => {

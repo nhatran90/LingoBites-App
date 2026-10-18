@@ -1,8 +1,8 @@
 import {useEffect, useMemo, useState} from 'react';
 
-import {useLearnerProfileStore} from '@features/onboarding';
 import {loadReadingRecorder} from '@features/speaking';
 
+import {useLearnerAgeGroup} from '@core/learning';
 import {useFeatureEnabled} from '@core/release';
 
 import {fetchPronunciationEnabled} from './pronunciationClient';
@@ -20,9 +20,8 @@ let enabledThisSession = false;
 
 export function usePronunciationAvailable(): boolean {
   const flagOn = useFeatureEnabled('pronunciationSupport');
-  const kid = useLearnerProfileStore(
-    state => state.profile?.ageGroup === 'kids',
-  );
+  const ageGroup = useLearnerAgeGroup();
+  const kid = ageGroup === 'kids';
   const [enabled, setEnabled] = useState(enabledThisSession);
   const hasRecorder = useMemo(() => loadReadingRecorder() !== null, []);
 

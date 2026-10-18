@@ -31,6 +31,15 @@ if (typeof global !== 'undefined' && !global.crypto) {
   };
 }
 
+// React 19 reportGlobalError relies on window.dispatchEvent when window is present
+if (
+  typeof window !== 'undefined' &&
+  typeof window.dispatchEvent !== 'function'
+) {
+  // No listener cancels the event; let React report errors to console.error.
+  window.dispatchEvent = () => true;
+}
+
 jest.mock('react-native-youtube-iframe', () => {
   const React = require('react');
   const {View} = require('react-native');

@@ -2,7 +2,8 @@ import React from 'react';
 import {useTranslation} from 'react-i18next';
 import {Pressable, StyleSheet, View} from 'react-native';
 
-import {formatCueTimestamp, type PracticeSegmentView} from '@features/lesson';
+import type {PracticeSegmentView} from '@features/lesson/flow';
+import {formatCueTimestamp} from '@features/lesson/player';
 
 import {AppCard} from '@ui/components/AppCard';
 import {AppText} from '@ui/components/AppText';

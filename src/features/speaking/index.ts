@@ -117,12 +117,53 @@ export type {
   SaveShadowingAttemptInput,
   SaveShadowingAttemptResult,
 } from './logic/shadowing/saveShadowingAttempt';
-export {
-  findMostRecentInProgressShadowingLesson,
-  listShadowingLessonProgressSummaries,
-  resolveShadowingEntry,
-  summarizeShadowingLessonProgress,
-} from './logic/shadowing/shadowingProgress';
+export function findMostRecentInProgressShadowingLesson(
+  ...args: Parameters<
+    typeof import('./logic/shadowing/shadowingProgress').findMostRecentInProgressShadowingLesson
+  >
+): ReturnType<
+  typeof import('./logic/shadowing/shadowingProgress').findMostRecentInProgressShadowingLesson
+> {
+  const {findMostRecentInProgressShadowingLesson: fn} =
+    require('./logic/shadowing/shadowingProgress') as typeof import('./logic/shadowing/shadowingProgress');
+  return fn(...args);
+}
+
+export function listShadowingLessonProgressSummaries(
+  ...args: Parameters<
+    typeof import('./logic/shadowing/shadowingProgress').listShadowingLessonProgressSummaries
+  >
+): ReturnType<
+  typeof import('./logic/shadowing/shadowingProgress').listShadowingLessonProgressSummaries
+> {
+  const {listShadowingLessonProgressSummaries: fn} =
+    require('./logic/shadowing/shadowingProgress') as typeof import('./logic/shadowing/shadowingProgress');
+  return fn(...args);
+}
+
+export function resolveShadowingEntry(
+  ...args: Parameters<
+    typeof import('./logic/shadowing/shadowingProgress').resolveShadowingEntry
+  >
+): ReturnType<
+  typeof import('./logic/shadowing/shadowingProgress').resolveShadowingEntry
+> {
+  const {resolveShadowingEntry: fn} =
+    require('./logic/shadowing/shadowingProgress') as typeof import('./logic/shadowing/shadowingProgress');
+  return fn(...args);
+}
+
+export function summarizeShadowingLessonProgress(
+  ...args: Parameters<
+    typeof import('./logic/shadowing/shadowingProgress').summarizeShadowingLessonProgress
+  >
+): ReturnType<
+  typeof import('./logic/shadowing/shadowingProgress').summarizeShadowingLessonProgress
+> {
+  const {summarizeShadowingLessonProgress: fn} =
+    require('./logic/shadowing/shadowingProgress') as typeof import('./logic/shadowing/shadowingProgress');
+  return fn(...args);
+}
 export type {
   ShadowingEntryTarget,
   ShadowingLessonProgressSummary,

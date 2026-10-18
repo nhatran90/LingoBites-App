@@ -4,7 +4,7 @@ import {useTranslation} from 'react-i18next';
 import {ScrollView, StyleSheet} from 'react-native';
 
 import {SpeakContext, SpeechNotice, useSpeak} from '@features/audio';
-import {SummativeTaskView} from '@features/lesson';
+import {SummativeTaskView} from '@features/lesson/flow';
 
 import {AppScreen} from '@ui/components/AppScreen';
 import {AppText} from '@ui/components/AppText';

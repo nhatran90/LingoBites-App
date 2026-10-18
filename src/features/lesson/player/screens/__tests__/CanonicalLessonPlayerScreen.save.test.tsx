@@ -127,6 +127,8 @@ jest.mock('../../logic/useLessonCompletion', () => ({
   }),
 }));
 
+let activeRenderers: ReactTestRenderer.ReactTestRenderer[] = [];
+
 function renderScreen() {
   const navigation = {
     navigate: jest.fn(),
@@ -148,6 +150,7 @@ function renderScreen() {
       </FeatureFlagProvider>,
     );
   });
+  activeRenderers.push(tree);
   return tree;
 }
 
@@ -183,6 +186,15 @@ function label(tree: ReactTestRenderer.ReactTestRenderer, testID: string) {
 }
 
 describe('CanonicalLessonPlayerScreen save actions', () => {
+  afterEach(async () => {
+    await act(async () => {
+      for (const tree of activeRenderers) {
+        tree.unmount();
+      }
+      activeRenderers = [];
+    });
+  });
+
   beforeEach(() => {
     __resetMockDatabases();
     resetDatabaseForTests(openSqlite({name: DB_NAME}));

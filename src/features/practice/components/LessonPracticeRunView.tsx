@@ -3,7 +3,7 @@ import {useTranslation} from 'react-i18next';
 import {ScrollView, StyleSheet, View} from 'react-native';
 
 import {SpeakContext, SpeechNotice, useSpeak} from '@features/audio';
-import {ActivityBody, isSpeakingActivity} from '@features/lesson';
+import {ActivityBody, isSpeakingActivity} from '@features/lesson/flow';
 
 import {AppButton} from '@ui/components/AppButton';
 import {AppCard} from '@ui/components/AppCard';

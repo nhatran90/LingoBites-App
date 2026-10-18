@@ -159,6 +159,8 @@ jest.mock('../../../flow/logic/practiceSegments', () => {
   };
 });
 
+let activeRenderers: ReactTestRenderer.ReactTestRenderer[] = [];
+
 function renderScreen() {
   const navigation = {
     navigate: jest.fn(),
@@ -180,6 +182,7 @@ function renderScreen() {
       </FeatureFlagProvider>,
     );
   });
+  activeRenderers.push(tree);
   return {tree, navigation};
 }
 
@@ -196,6 +199,15 @@ function has(tree: ReactTestRenderer.ReactTestRenderer, testID: string) {
 }
 
 describe('CanonicalLessonPlayerScreen lesson hub', () => {
+  afterEach(async () => {
+    await act(async () => {
+      for (const tree of activeRenderers) {
+        tree.unmount();
+      }
+      activeRenderers = [];
+    });
+  });
+
   beforeEach(() => {
     mockState = {status: 'ready', snapshot, offline: false, hasUpdate: false};
     mockCompletionState = 'unfinished';

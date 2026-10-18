@@ -31,7 +31,7 @@ import {
   PasteTextScreen,
 } from '@features/input';
 import {MomentReviewScreen, SituationInputScreen} from '@features/input';
-import {LessonFlowPlayerScreen} from '@features/lesson';
+import {LessonFlowPlayerScreen} from '@features/lesson/flow';
 import {
   LessonsHistoryScreen,
   LibraryListScreen,

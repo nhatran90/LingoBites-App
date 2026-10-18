@@ -50,7 +50,7 @@ const LAYER_RANK = {
   core: 3,
 };
 
-const LESSON_SUB_PARTS = ['library', 'player'];
+const LESSON_SUB_PARTS = ['library', 'player', 'flow'];
 
 function loadCompilerOptions(rootDir = appRoot) {
   const tsconfigPath = path.join(rootDir, 'tsconfig.json');

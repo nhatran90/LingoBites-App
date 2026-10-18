@@ -10,7 +10,7 @@ import {
   noSpeakingActive,
   type PracticeSegmentView,
   practiceSegmentViews,
-} from '@features/lesson';
+} from '@features/lesson/flow';
 import {
   getLessonDownload,
   suggestComposePick,

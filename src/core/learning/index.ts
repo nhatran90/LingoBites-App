@@ -12,6 +12,7 @@ export {
   isAudienceVisible,
   type LearnerAgeGroup,
   setLearnerAgeGroup,
+  useLearnerAgeGroup,
 } from './learnerAudience';
 export {
   buildLessonPracticePlan,

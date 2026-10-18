@@ -2008,6 +2008,8 @@
     "locked_hint": "Open Settings to turn on pronunciation scoring",
     "title": "Read this word aloud",
     "title_sentence": "Read this sentence aloud",
+    "record_prompt": "Read the word aloud, up to 15 seconds.",
+    "record_prompt_sentence": "Read the sentence aloud, up to 15 seconds.",
     "record_stop_send": "Tap to stop and send for scoring",
     "cancel": "Cancel",
     "cancel_hint": "Back to the card without scoring",

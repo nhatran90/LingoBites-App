@@ -2008,6 +2008,8 @@
     "locked_hint": "Mở Cài đặt để bật chấm phát âm",
     "title": "Đọc to từ này",
     "title_sentence": "Đọc to câu này",
+    "record_prompt": "Đọc to từ này, tối đa 15 giây.",
+    "record_prompt_sentence": "Đọc to câu này, tối đa 15 giây.",
     "record_stop_send": "Bấm để dừng và gửi chấm",
     "cancel": "Huỷ",
     "cancel_hint": "Quay lại thẻ mà không chấm",

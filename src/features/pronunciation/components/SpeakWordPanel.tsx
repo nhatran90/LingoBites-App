@@ -107,6 +107,7 @@ export function SpeakWordPanel({
         listenModel={listenModel}
         onDone={onDone}
         practice={practice}
+        sentence={sentence}
         styles={styles}
         testID={testID}
       />
@@ -116,6 +117,7 @@ export function SpeakWordPanel({
 
 function Body({
   practice,
+  sentence,
   elapsed,
   listenModel,
   onDone,
@@ -123,6 +125,7 @@ function Body({
   testID,
 }: {
   practice: PronunciationPractice;
+  sentence: boolean;
   elapsed: number;
   listenModel?: () => void;
   onDone: () => void;
@@ -228,7 +231,11 @@ function Body({
             <AppText color="secondary" variant="label">
               {recording
                 ? t('speakWord.record_stop_send')
-                : t('pronunciation.record_prompt')}
+                : t(
+                    sentence
+                      ? 'speakWord.record_prompt_sentence'
+                      : 'speakWord.record_prompt',
+                  )}
             </AppText>
           </View>
           {cancel}
@@ -413,6 +420,9 @@ function makeStyles(theme: AppTheme) {
       color: colors.text.primary,
       fontSize: 32,
       fontWeight: '800',
+      // AppText's body line height is far shorter than 32pt: without this
+      // the word's ascenders are clipped and it runs into the title above.
+      lineHeight: 40,
       textAlign: 'center',
     },
     block: {

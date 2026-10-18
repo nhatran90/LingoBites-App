@@ -274,6 +274,8 @@ export function createAppNavigation(
     openToday: target => navigate('Today', target),
     openSpeakingRoom: () => navigate('SpeakingRoom', undefined),
     openLearningProfile: () => navigate('LearningProfile', undefined),
+    openPronunciationSettings: () =>
+      navigate('PronunciationSettings', undefined),
     openShadowing: target =>
       target
         ? navigate('ShadowingSession', target)

@@ -102,6 +102,7 @@ export {
   setPronunciationConsent,
   shouldAskEvaluationConsent,
   shouldAskPronunciationConsent,
+  subscribePronunciationConsent,
 } from './logic/upload/recordingConsent';
 export {queueLessonTaskRecording} from './logic/upload/lessonTaskRecording';
 export {

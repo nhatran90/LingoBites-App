@@ -155,6 +155,11 @@ export interface AppNavigation {
   /** Phase 2: the learner profile (level, goals…) and the placement test. */
   openLearningProfile(): void;
   /**
+   * The "Chấm phát âm bằng máy" switch, over the current screen: a locked
+   * "Nói từ" on a card leads here, and back returns to that card.
+   */
+  openPronunciationSettings(): void;
+  /**
    * Open shadowing practice: a specific lesson/sentence when given,
    * otherwise the lesson picker.
    */

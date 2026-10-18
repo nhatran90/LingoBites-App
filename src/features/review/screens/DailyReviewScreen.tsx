@@ -14,6 +14,12 @@ import {
   type ReviewSession,
   startReviewSession,
 } from '@features/engagement';
+import {
+  cardReadingTarget,
+  SpeakWordButton,
+  SpeakWordPanel,
+  useSpeakWordAccess,
+} from '@features/pronunciation';
 import {requestSync} from '@features/sync';
 
 import {AppButton} from '@ui/components/AppButton';
@@ -37,6 +43,7 @@ import {useAppTheme} from '@ui/theme';
 
 import type {FlashcardRecord, ReviewRating} from '@core/db/types';
 import {renderFrameWithLabels} from '@core/learning';
+import {useAppNavigation} from '@core/navigation';
 import {useFeatureEnabled} from '@core/release';
 
 import {ReviewCardBack, ReviewCardFront} from '../components/ReviewCardFaces';
@@ -148,6 +155,10 @@ export function DailyReviewScreen({
   const [flipped, setFlipped] = useState(false);
   // "Viết thử": write the word before flipping (practice only).
   const [writing, setWriting] = useState(false);
+  // "Nói từ": read the card aloud for scoring before flipping (practice only).
+  const [speaking, setSpeaking] = useState(false);
+  const speakAccess = useSpeakWordAccess();
+  const appNavigation = useAppNavigation();
   const [ratingError, setRatingError] = useState<string | null>(null);
   const [summary, setSummary] = useState<Summary>({
     reviewed: 0,
@@ -167,11 +178,20 @@ export function DailyReviewScreen({
   );
   const carryOverCount = Math.max(0, allDueCount - sessionCards.length);
   const activeCard = sessionCards[currentIndex] ?? null;
+  const speakTarget = activeCard
+    ? cardReadingTarget({
+        place: 'review',
+        text: activeCard.word,
+        itemId: activeCard.itemId ?? null,
+        kind: activeCard.kind ?? null,
+      })
+    : null;
 
   function finishNext(nextSummary: Summary) {
     setRatingError(null);
     setFlipped(false);
     setWriting(false);
+    setSpeaking(false);
     if (currentIndex + 1 >= sessionCards.length) {
       setSummary(nextSummary);
       setComplete(true);
@@ -475,6 +495,22 @@ export function DailyReviewScreen({
                 word={activeCard.word}
               />
             </ScrollView>
+          ) : activeCard && speaking && speakTarget ? (
+            <ScrollView>
+              <SpeakWordPanel
+                ipa={activeCard.ipa}
+                key={activeCard.id}
+                meaningVi={activeCard.meaningVi}
+                onDone={() => {
+                  setSpeaking(false);
+                  setFlipped(true);
+                }}
+                onSpeak={speak}
+                target={speakTarget}
+                testID="review-speak"
+                text={activeCard.word}
+              />
+            </ScrollView>
           ) : activeCard ? (
             <SwipeCard
               cardKey={activeCard.id}
@@ -508,11 +544,29 @@ export function DailyReviewScreen({
         {activeCard &&
         !flipped &&
         !writing &&
+        !speaking &&
         activeCard.kind !== 'pattern' &&
         canWriteWord(activeCard.word) ? (
           <WriteWordButton
             onPress={() => setWriting(true)}
             testID="review-write-try"
+            text={activeCard.word}
+          />
+        ) : null}
+        {activeCard &&
+        !flipped &&
+        !writing &&
+        !speaking &&
+        speakTarget &&
+        speakAccess !== 'hidden' ? (
+          <SpeakWordButton
+            locked={speakAccess === 'locked'}
+            onPress={() =>
+              speakAccess === 'ready'
+                ? setSpeaking(true)
+                : appNavigation.openPronunciationSettings()
+            }
+            testID="review-speak-try"
             text={activeCard.word}
           />
         ) : null}

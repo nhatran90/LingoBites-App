@@ -61,3 +61,47 @@ export function summaryKey(score: number | null): string {
 export function unscorableKey(reason: PronunciationUnscorableReason): string {
   return `pronunciation.unscorable_${reason}`;
 }
+
+/** The weakest sound of a reading: where to look first. */
+export type WeakestSound = {
+  /** Index among `referenceWords`. */
+  wordIndex: number;
+  word: string;
+  ipa: string;
+  accuracy: number;
+  band: ScoreBand;
+};
+
+/**
+ * The lowest-scored sound across the words read, or null when every sound
+ * is good (or none has a score). Words left out have no sounds to compare.
+ */
+export function weakestSound(
+  words: readonly PronunciationWord[],
+): WeakestSound | null {
+  let weakest: WeakestSound | null = null;
+  referenceWords(words).forEach((word, wordIndex) => {
+    if (word.error === 'omission') return;
+    for (const phoneme of word.phonemes) {
+      if (phoneme.accuracy === null) continue;
+      if (weakest === null || phoneme.accuracy < weakest.accuracy) {
+        weakest = {
+          wordIndex,
+          word: word.text ?? '',
+          ipa: phoneme.ipa,
+          accuracy: phoneme.accuracy,
+          band: bandOf(phoneme.accuracy)!,
+        };
+      }
+    }
+  });
+  const found = weakest as WeakestSound | null;
+  return found && found.band !== 'good' ? found : null;
+}
+
+/** How many sounds of one word are below good. */
+export function soundsToFix(word: PronunciationWord): number {
+  return word.phonemes.filter(
+    phoneme => (bandOf(phoneme.accuracy) ?? 'poor') !== 'good',
+  ).length;
+}

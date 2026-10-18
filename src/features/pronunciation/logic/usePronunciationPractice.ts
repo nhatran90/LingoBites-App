@@ -21,9 +21,11 @@ import {
   submitReading,
   type SubmitReadingFailure,
 } from './pronunciationClient';
+import type {ReadingTarget} from './readingTarget';
 
 /**
- * Pronunciation step 3: one practice sheet's flow for one item. Ask for the
+ * Pronunciation step 3: one practice sheet's (or card panel's) flow for one
+ * reading target. Ask for the
  * consent once, record a take (stopped at 15 s), send it, then ask for the
  * scores until they come or 30 s pass. The take stays on the device so the
  * learner can hear it again, and is deleted on the next take, on "try
@@ -118,11 +120,15 @@ const SUBMIT_ERRORS: Record<
 };
 
 export function usePronunciationPractice(
-  itemId: string,
+  target: ReadingTarget,
   overrides: Partial<PracticeDeps> = {},
 ): PronunciationPractice {
   const depsRef = useRef<PracticeDeps>({...defaultDeps(), ...overrides});
   const deps = depsRef.current;
+  // The caller remounts the practice for another target; a new object for
+  // the same target must not restart anything.
+  const targetRef = useRef(target);
+  targetRef.current = target;
 
   const restingState = useCallback((): PracticeState => {
     const {consent} = depsRef.current;
@@ -237,7 +243,7 @@ export function usePronunciationPractice(
         return;
       }
       const sent = await depsRef.current.submitReading({
-        itemId,
+        target: targetRef.current,
         durationMs,
         file: {
           byteSize: read.byteSize,
@@ -259,7 +265,7 @@ export function usePronunciationPractice(
       settle(generation, {phase: 'scoring'});
       poll(generation);
     },
-    [itemId, poll, restingState, settle],
+    [poll, restingState, settle],
   );
 
   const stop = useCallback(() => {

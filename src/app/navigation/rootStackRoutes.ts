@@ -30,6 +30,7 @@ export const ROOT_FLOW_ROUTES = [
   'ShadowingLessonPicker',
   'ShadowingSession',
   'ShadowingSummary',
+  'PronunciationSettings',
 ] as const satisfies readonly RootRouteName[];
 
 /** Create-flow input screens, mounted only when their feature chain is on. */

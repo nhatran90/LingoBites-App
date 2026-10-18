@@ -37,6 +37,7 @@ import type {
 } from '@features/patternTense';
 import type {PracticeRouteParams} from '@features/practice';
 import type {ProfileStackParamList} from '@features/profile';
+import type {PronunciationSettingsRouteParams} from '@features/pronunciation';
 import type {
   DailyReviewRouteParams,
   ItemReviewRouteParams,
@@ -113,4 +114,5 @@ export type RootStackParamList = {
   ShadowingLessonPicker: ShadowingLessonPickerRouteParams;
   ShadowingSession: ShadowingSessionRouteParams;
   ShadowingSummary: ShadowingSummaryRouteParams;
+  PronunciationSettings: PronunciationSettingsRouteParams;
 };

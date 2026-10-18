@@ -4,8 +4,10 @@ import {
   addedWordCount,
   bandOf,
   referenceWords,
+  soundsToFix,
   summaryKey,
   unscorableKey,
+  weakestSound,
   wordMark,
 } from '../scoreBands';
 
@@ -62,5 +64,59 @@ describe('scoreBands', () => {
     expect(unscorableKey('no_speech')).toBe(
       'pronunciation.unscorable_no_speech',
     );
+  });
+});
+
+describe('weakestSound', () => {
+  const said = (
+    text: string,
+    phonemes: Array<[string, number | null]>,
+    error: PronunciationWord['error'] = 'none',
+  ): PronunciationWord => ({
+    text,
+    accuracy: 70,
+    error,
+    phonemes: phonemes.map(([ipa, accuracy]) => ({ipa, accuracy})),
+  });
+
+  it('finds the lowest sound across the words read', () => {
+    const words = [
+      said('send', [
+        ['s', 88],
+        ['d', 31],
+      ]),
+      said('me', [['m', 52]]),
+    ];
+    expect(weakestSound(words)).toEqual({
+      wordIndex: 0,
+      word: 'send',
+      ipa: 'd',
+      accuracy: 31,
+      band: 'poor',
+    });
+  });
+
+  it('skips words left out and added, and is null when all is good', () => {
+    const words = [
+      said('the', [['ð', 10]], 'omission'),
+      {text: null, accuracy: 0, error: 'insertion' as const, phonemes: []},
+      said('ship', [
+        ['ʃ', 90],
+        ['p', null],
+      ]),
+    ];
+    expect(weakestSound(words)).toBeNull();
+  });
+
+  it('counts the sounds of a word below good', () => {
+    expect(
+      soundsToFix(
+        said('schedule', [
+          ['s', 92],
+          ['e', 74],
+          ['dʒ', 41],
+        ]),
+      ),
+    ).toBe(2);
   });
 });

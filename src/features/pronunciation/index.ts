@@ -35,6 +35,24 @@ export {
   usePronunciationAvailable,
 } from './logic/usePronunciationAvailable';
 export {PronunciationPracticeSheet} from './components/PronunciationPracticeSheet';
+export {
+  canSpeakText,
+  cardReadingTarget,
+  isSentence,
+  readingTargetKey,
+} from './logic/readingTarget';
+export type {ReadingSource, ReadingTarget} from './logic/readingTarget';
+export {useSpeakWordAccess} from './logic/useSpeakWordAccess';
+export type {SpeakWordAccess} from './logic/useSpeakWordAccess';
+export {SpeakWordButton} from './components/SpeakWordButton';
+export {SpeakWordPanel} from './components/SpeakWordPanel';
+export type {SpeakWordPanelProps} from './components/SpeakWordPanel';
+export {SpeakResult} from './components/SpeakResult';
+export {PronunciationSettingsScreen} from './screens/PronunciationSettingsScreen';
+export type {
+  PronunciationSettingsRouteParams,
+  PronunciationSettingsScreenProps,
+} from './screens/PronunciationSettingsScreen';
 export type {
   PracticeItem,
   PronunciationPracticeSheetProps,

@@ -66,6 +66,21 @@ export function loadLessonRecorder(): LessonRecorder | null {
     return null;
   }
 }
+
+/**
+ * Pronunciation step 3: the lesson recorder plus reading a finished take
+ * (size, SHA-256, bytes) for upload. Loaded lazily like the recorder above.
+ */
+export type ReadingRecorder = LessonRecorder &
+  Pick<typeof import('./logic/recordingService'), 'readRecordingFileForUpload'>;
+
+export function loadReadingRecorder(): ReadingRecorder | null {
+  try {
+    return require('./logic/recordingService') as typeof import('./logic/recordingService');
+  } catch {
+    return null;
+  }
+}
 export {saveShadowingAttempt} from './logic/shadowing/saveShadowingAttempt';
 export {
   initRecordingUploadQueue,

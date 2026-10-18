@@ -19,6 +19,7 @@ import {LibraryCover} from '@ui/components/LibraryCover';
 import {MaterialIcon} from '@ui/components/MaterialIcon';
 import {ScreenHeader} from '@ui/components/ScreenHeader';
 import {ShelfSurface} from '@ui/components/ShelfSurface';
+import {SkeletonBlock, SkeletonGroup} from '@ui/components/Skeleton';
 import {type AppTheme, useAppTheme} from '@ui/theme';
 
 import {useAppNavigation} from '@core/navigation';
@@ -29,7 +30,11 @@ import {
 } from '../components/CurriculumHeroChrome';
 import {CurriculumHeroCover} from '../components/CurriculumHeroCover';
 import {CurriculumList} from '../components/CurriculumList';
-import {LessonStep, type LessonStepState} from '../components/LessonStep';
+import {
+  LessonStep,
+  LessonStepSkeleton,
+  type LessonStepState,
+} from '../components/LessonStep';
 import {SummativeMissionCard} from '../components/SummativeMissionCard';
 import {UnitProgressRing} from '../components/UnitProgressRing';
 import {curriculumGlyph} from '../logic/curriculumCover';
@@ -157,7 +162,11 @@ export function UnitLessonsScreen({navigation, route}: Props) {
     : [];
 
   const hasLessons = ready !== null && ready.lessons.length > 0;
-  const header = hasLessons ? (
+  // While loading, the unit's cover, breadcrumb and title (all known from
+  // the route) are drawn at once, so the page keeps its layout.
+  const loading = state.status === 'loading';
+  const showHero = hasLessons || loading;
+  const header = showHero ? (
     <View style={themedStyles.header}>
       <CurriculumHeroCover
         glyph={curriculumGlyph(title)}
@@ -202,12 +211,23 @@ export function UnitLessonsScreen({navigation, route}: Props) {
               {screenTitle}
             </AppText>
           </View>
-          <UnitProgressRing
-            progress={ready.progress}
-            testID="unit-lessons-progress"
-          />
+          {ready ? (
+            <UnitProgressRing
+              progress={ready.progress}
+              testID="unit-lessons-progress"
+            />
+          ) : (
+            <SkeletonGroup>
+              <SkeletonBlock height={68} radius={34} width={68} />
+            </SkeletonGroup>
+          )}
         </View>
-        {nextLesson ? (
+        {loading ? (
+          <SkeletonGroup>
+            <SkeletonBlock height={66} radius={22} />
+          </SkeletonGroup>
+        ) : null}
+        {ready && nextLesson ? (
           <Pressable
             accessibilityHint={t('course.lesson_row_hint')}
             accessibilityLabel={`${t(
@@ -266,8 +286,8 @@ export function UnitLessonsScreen({navigation, route}: Props) {
   ) : undefined;
 
   return (
-    <AppScreen edges={hasLessons ? ['left', 'right', 'bottom'] : undefined}>
-      {hasLessons ? null : (
+    <AppScreen edges={showHero ? ['left', 'right', 'bottom'] : undefined}>
+      {showHero ? null : (
         <ScreenHeader
           breadcrumb={breadcrumb}
           title={screenTitle}
@@ -291,12 +311,23 @@ export function UnitLessonsScreen({navigation, route}: Props) {
         }
         header={header}
         onRetry={refresh}
-        onScroll={hasLessons ? onScroll : undefined}
+        onScroll={showHero ? onScroll : undefined}
         rows={rows}
+        skeleton={
+          <View style={themedStyles.steps}>
+            {[1, 2, 3, 4].map(number => (
+              <LessonStepSkeleton
+                gap={theme.spacing.md}
+                key={number}
+                number={number}
+              />
+            ))}
+          </View>
+        }
         status={state.status}
         testID="unit-lessons"
       />
-      {hasLessons ? (
+      {showHero ? (
         <CurriculumHeroChrome
           onBack={() => navigation.goBack()}
           scrollY={scrollY}
@@ -360,6 +391,9 @@ function makeStyles(theme: AppTheme) {
     },
     header: {
       paddingBottom: theme.spacing.sm,
+    },
+    steps: {
+      gap: theme.spacing.md,
     },
     play: {
       alignItems: 'center',

@@ -733,6 +733,7 @@
     "grammar_point": "Điểm {{index}}",
     "player_title": "Bài học",
     "loading": "Đang mở bài học…",
+    "loading_hint": "Nội dung bài học hiện ra khi tải xong",
     "load_failed": "Không mở được bài học.",
     "not_downloaded": "Bài này chưa có trên máy. Kết nối mạng để tải.",
     "update_app": "Hãy cập nhật ứng dụng để mở bài học này.",

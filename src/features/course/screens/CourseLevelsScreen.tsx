@@ -7,6 +7,7 @@ import {StyleSheet, View} from 'react-native';
 import {AppScreen} from '@ui/components/AppScreen';
 import {AppText} from '@ui/components/AppText';
 import {ScreenHeader} from '@ui/components/ScreenHeader';
+import {SkeletonBlock, SkeletonGroup} from '@ui/components/Skeleton';
 import {type AppTheme, useAppTheme} from '@ui/theme';
 
 import {
@@ -16,7 +17,7 @@ import {
 import {CurriculumHeroCover} from '../components/CurriculumHeroCover';
 import {CurriculumList} from '../components/CurriculumList';
 import {levelName, LevelPassSwitcher} from '../components/LevelPassSwitcher';
-import {LevelUnitList} from '../components/LevelUnitList';
+import {LevelUnitList, UnitRouteSkeleton} from '../components/LevelUnitList';
 import {curriculumGlyph} from '../logic/curriculumCover';
 import {useCourseLevels} from '../logic/useCurriculum';
 import type {CourseFlowParamList} from './navigationTypes';
@@ -103,6 +104,56 @@ export function CourseLevelsScreen({navigation, route}: Props) {
     </View>
   ) : undefined;
 
+  // While the levels load, the course's own cover and title (passed from
+  // the card just tapped) are already on screen; only the rest waits.
+  if (!selected && state.status === 'loading') {
+    return (
+      <AppScreen edges={['left', 'right', 'bottom']}>
+        <CurriculumList
+          emptyMessage={t('course.levels_empty')}
+          header={
+            <View style={themedStyles.header}>
+              <CurriculumHeroCover
+                glyph={curriculumGlyph(title)}
+                imageUrl={coverUrl}
+                scrollY={scrollY}
+                testID="course-levels-cover"
+              >
+                <AppText testID="course-levels-title" variant="h1">
+                  {screenTitle}
+                </AppText>
+                <SkeletonGroup style={themedStyles.headerSkeleton}>
+                  <View style={themedStyles.passesSkeleton}>
+                    {[0, 1, 2].map(index => (
+                      <SkeletonBlock
+                        height={52}
+                        key={index}
+                        radius={theme.radius.md}
+                        style={themedStyles.passSkeleton}
+                      />
+                    ))}
+                  </View>
+                  <SkeletonBlock height={12} width="80%" />
+                </SkeletonGroup>
+              </CurriculumHeroCover>
+            </View>
+          }
+          onRetry={refresh}
+          onScroll={onScroll}
+          rows={[]}
+          skeleton={<UnitRouteSkeleton />}
+          status="loading"
+          testID="course-levels"
+        />
+        <CurriculumHeroChrome
+          onBack={() => navigation.goBack()}
+          scrollY={scrollY}
+          title={screenTitle}
+        />
+      </AppScreen>
+    );
+  }
+
   if (!selected) {
     return (
       <AppScreen>
@@ -151,6 +202,16 @@ function makeStyles(theme: AppTheme) {
   return StyleSheet.create({
     header: {
       paddingBottom: theme.spacing.sm,
+    },
+    headerSkeleton: {
+      gap: theme.spacing.sm,
+    },
+    passSkeleton: {
+      flex: 1,
+    },
+    passesSkeleton: {
+      flexDirection: 'row',
+      gap: theme.spacing.sm,
     },
   });
 }

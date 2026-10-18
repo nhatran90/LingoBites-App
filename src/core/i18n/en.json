@@ -733,6 +733,7 @@
     "grammar_point": "Point {{index}}",
     "player_title": "Lesson",
     "loading": "Opening lesson…",
+    "loading_hint": "The lesson appears once it has loaded",
     "load_failed": "Lesson failed to load.",
     "not_downloaded": "This lesson is not on your device yet. Connect to the internet to download it.",
     "update_app": "Please update the app to open this lesson.",

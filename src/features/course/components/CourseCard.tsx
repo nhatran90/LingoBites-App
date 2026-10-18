@@ -7,6 +7,7 @@ import {withAlpha} from '@ui/components/layout';
 import {type CoverGlyph, LibraryCover} from '@ui/components/LibraryCover';
 import {MaterialIcon} from '@ui/components/MaterialIcon';
 import {ShelfSurface} from '@ui/components/ShelfSurface';
+import {SkeletonBlock} from '@ui/components/Skeleton';
 import {type AppTheme, useAppTheme} from '@ui/theme';
 import {solidOver} from '@ui/theme/colorUtils';
 
@@ -178,6 +179,53 @@ export function CourseCard({
   );
 }
 
+/**
+ * A course card while the list loads: the same size, colour and shelf, with
+ * placeholder lines for the title, blurb and pill and a block for the
+ * picture. Place inside a `SkeletonGroup`.
+ */
+export function CourseCardSkeleton({
+  tone,
+  gutter,
+}: {
+  tone: CourseCardTone;
+  gutter: number;
+}) {
+  const {theme} = useAppTheme();
+  const {width} = useWindowDimensions();
+  const colors = toneColors(theme, tone);
+  const artWidth = Math.max(0, (width - gutter * 2) * ART_SHARE * 0.9);
+
+  return (
+    <ShelfSurface
+      borderRadius={RADIUS}
+      faceStyle={[styles.skeletonFace, {backgroundColor: colors.face}]}
+      shelfColor={colors.shelf}
+      shelfHeight={5}
+    >
+      <SkeletonBlock
+        color={colors.blob}
+        height={HEIGHT}
+        radius={0}
+        style={styles.art}
+        width={artWidth}
+      />
+      <View style={[styles.copy, {minHeight: HEIGHT}]}>
+        <SkeletonBlock color={colors.blob} height={18} width="80%" />
+        <SkeletonBlock color={colors.blob} height={12} width="95%" />
+        <SkeletonBlock color={colors.blob} height={12} width="60%" />
+        <SkeletonBlock
+          color={colors.blob}
+          height={26}
+          radius={theme.radius.pill}
+          style={styles.skeletonPill}
+          width={92}
+        />
+      </View>
+    </ShelfSurface>
+  );
+}
+
 function toneColors(theme: AppTheme, tone: CourseCardTone) {
   const {colors} = theme;
   const pick = {
@@ -209,6 +257,13 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     paddingVertical: 14,
     width: '58%',
+  },
+  skeletonFace: {
+    height: HEIGHT,
+    overflow: 'hidden',
+  },
+  skeletonPill: {
+    marginTop: 8,
   },
   copyCompact: {
     gap: 2,

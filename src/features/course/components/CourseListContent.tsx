@@ -1,6 +1,7 @@
 import {useFocusEffect} from '@react-navigation/native';
 import React, {useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
+import {View} from 'react-native';
 
 import {showToast} from '@ui/components/toast';
 import {useAppTheme} from '@ui/theme';
@@ -9,7 +10,7 @@ import {useAppNavigation} from '@core/navigation';
 
 import {curriculumGlyph} from '../logic/curriculumCover';
 import {useCourses} from '../logic/useCurriculum';
-import {CourseCard, courseCardToneAt} from './CourseCard';
+import {CourseCard, CourseCardSkeleton, courseCardToneAt} from './CourseCard';
 import {CurriculumList} from './CurriculumList';
 
 /**
@@ -90,6 +91,17 @@ export function CourseListContent({
       header={header}
       onRetry={refresh}
       rows={rows}
+      skeleton={
+        <View style={{gap: theme.spacing.md}}>
+          {[0, 1, 2].map(index => (
+            <CourseCardSkeleton
+              gutter={theme.gutter}
+              key={index}
+              tone={courseCardToneAt(index)}
+            />
+          ))}
+        </View>
+      }
       status={state.status}
       testID="course-list"
     />

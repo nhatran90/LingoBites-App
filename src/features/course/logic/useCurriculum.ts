@@ -1,6 +1,8 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 
-import {isAudienceVisible} from '@core/learning';
+import {useAccountStore} from '@features/account';
+
+import {getLearnerAgeGroup, isAudienceVisible} from '@core/learning';
 
 import {
   type Course,
@@ -30,13 +32,36 @@ export type CurriculumState<T> =
   | {status: 'error'; error: CourseClientError};
 
 /**
+ * Lists already loaded in this app session, so opening the same course or
+ * unit again shows it at once while it refreshes. Keyed by account and age
+ * group, so another learner never sees them.
+ */
+const sessionCache = new Map<string, unknown>();
+
+function sessionCacheKey(key: string): string {
+  const userId = useAccountStore.getState().user?.id ?? '';
+  return `${userId}|${getLearnerAgeGroup() ?? ''}|${key}`;
+}
+
+export function clearCurriculumCacheForTests(): void {
+  sessionCache.clear();
+}
+
+/**
  * Loads one curriculum list. `refresh` aborts the previous request, so a
- * screen re-focused while loading never shows a stale answer.
+ * screen re-focused while loading never shows a stale answer. A list loaded
+ * earlier in the session is shown at once and refreshed in place.
  */
 function useCurriculumLoader<T>(
+  cacheKey: string,
   load: (signal: AbortSignal) => Promise<CourseResult<T>>,
 ) {
-  const [state, setState] = useState<CurriculumState<T>>({status: 'loading'});
+  const [state, setState] = useState<CurriculumState<T>>(() => {
+    const scopedKey = sessionCacheKey(cacheKey);
+    return sessionCache.has(scopedKey)
+      ? {status: 'ready', data: sessionCache.get(scopedKey) as T}
+      : {status: 'loading'};
+  });
   const controllerRef = useRef<AbortController | null>(null);
 
   const refresh = useCallback(async () => {
@@ -46,14 +71,16 @@ function useCurriculumLoader<T>(
     setState(previous =>
       previous.status === 'ready' ? previous : {status: 'loading'},
     );
+    const scopedKey = sessionCacheKey(cacheKey);
     const result = await load(controller.signal);
     if (controller.signal.aborted) return;
+    if (result.ok) sessionCache.set(scopedKey, result.value);
     setState(
       result.ok
         ? {status: 'ready', data: result.value}
         : {status: 'error', error: result},
     );
-  }, [load]);
+  }, [cacheKey, load]);
 
   useEffect(() => () => controllerRef.current?.abort(), []);
 
@@ -94,7 +121,7 @@ export function useCourses() {
     },
     [],
   );
-  return useCurriculumLoader<CourseWithAccess[]>(load);
+  return useCurriculumLoader<CourseWithAccess[]>('courses', load);
 }
 
 /** Levels of one course. */
@@ -103,7 +130,7 @@ export function useCourseLevels(courseSlug: string) {
     (signal: AbortSignal) => fetchCourseLevels(courseSlug, {signal}),
     [courseSlug],
   );
-  return useCurriculumLoader<CourseLevel[]>(load);
+  return useCurriculumLoader<CourseLevel[]>(`levels:${courseSlug}`, load);
 }
 
 export type UnitWithProgress = {
@@ -151,7 +178,7 @@ export function useLevelUnits(levelId: string) {
     },
     [levelId],
   );
-  return useCurriculumLoader<UnitWithProgress[]>(load);
+  return useCurriculumLoader<UnitWithProgress[]>(`units:${levelId}`, load);
 }
 
 export type UnitLessons = {
@@ -186,5 +213,5 @@ export function useUnitLessons(unitId: string) {
     },
     [unitId],
   );
-  return useCurriculumLoader<UnitLessons>(load);
+  return useCurriculumLoader<UnitLessons>(`lessons:${unitId}`, load);
 }

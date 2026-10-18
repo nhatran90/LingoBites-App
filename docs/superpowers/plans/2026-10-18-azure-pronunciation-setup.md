@@ -99,6 +99,31 @@ Kết quả mong đợi (rút gọn):
 
 Lưu response mẫu (đã bỏ `Display`, `Lexical`, `ITN`) làm fixture cho test adapter ở PR 2.2.
 
+### Tính tối thiểu cho mỗi yêu cầu
+
+Chưa rõ Azure tính theo giây thật hay làm tròn lên một mức tối thiểu cho mỗi yêu cầu (ví dụ 15 s). Clip luyện phát âm chỉ 2–5 s, nên nếu có làm tròn thì chi phí có thể gấp 3–7 lần ước tính.
+
+**Cách đo:**
+1. Dùng một resource S0 chỉ để thử, không chung việc khác.
+2. Gửi đúng 100 clip có độ dài đã biết (ví dụ 100 clip × 3 s = 300 s).
+3. Sau 24–48 giờ, xem *Cost analysis* lọc theo resource. Khoảng 300 s là tính theo giây. Khoảng 1 500 s là tối thiểu khoảng 15 s mỗi yêu cầu.
+
+**Nếu có tính tối thiểu** (làm theo thứ tự):
+1. Chấm cả câu ví dụ chứa âm cần luyện ("The ship is big") thay vì từ lẻ ("ship"). Cùng giá, nhiều thông tin hơn.
+2. Giảm `pronunciation.daily_assessments` (ví dụ 20 xuống 10). Chỉnh theo gói, không sửa code.
+3. Giữ các chặn sẵn có: clip dưới 0,5 s không gửi, cùng audio thì chép kết quả cũ.
+
+**Nếu tính theo giây:** cắt khoảng lặng đầu và cuối bằng ffmpeg (`silenceremove`) trước khi gửi. Người học thường im 1–2 s trước và sau khi nói, nên có thể giảm 30–50 % chi phí. Thêm ở `transcode.ts` (PR 2.3) sau khi đo.
+
+### Chọn region
+
+**Đề xuất: Southeast Asia (Singapore).**
+- Cloud Run đang chạy ở `asia-southeast1` (Singapore). Gọi Azure cùng thành phố nhanh hơn gọi sang Mỹ khoảng 150–200 ms mỗi lượt.
+- Giọng người học được xử lý tại Singapore, không sang Mỹ. Dễ ghi trong thông báo riêng tư.
+- Với khối lượng ban đầu, chênh lệch giá giữa các region chỉ vài chục USD mỗi tháng.
+
+**Kiểm tra:** Azure Pricing Calculator, thêm *Speech*, so Southeast Asia với East US. Chỉ đổi khi Southeast Asia đắt hơn trên khoảng 30 %; khi đó xét East Asia (Hồng Kông). Đổi region chỉ cần đổi `AZURE_SPEECH_REGION`, không sửa code.
+
 ## 4. Biến môi trường server
 
 ```dotenv

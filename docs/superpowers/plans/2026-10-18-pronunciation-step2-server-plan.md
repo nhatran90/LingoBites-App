@@ -60,6 +60,11 @@ Test (`test/pronunciationAssessor.test.ts`): header đúng (giải base64 ra JSO
 
 ### PR 2.3: Chuyển định dạng audio
 
+> **Đã làm** (2026-10-18). Khác bảng dưới:
+> - **Không dùng stdin.** Thử thật: file m4a 15 s có `moov` ở cuối (kiểu Android ghi) qua stdin bị ffmpeg báo `partial file` và chỉ ra header WAV rỗng. Audio ghi vào thư mục tạm riêng (quyền 0700), WAV cũng ghi ra file để header có đúng độ dài, thư mục bị xoá trong `finally`.
+> - Thiếu ffmpeg thì `capabilities.pronunciation.enabled = false` và log lỗi một lần lúc khởi động. `/health` không đổi.
+> - **Chưa build được image Docker** trong môi trường làm việc: network policy chặn `deb.debian.org`. Cần build trên CI/máy có mạng, chạy `ffmpeg -version` trong container và ghi lại kích thước image.
+
 | File | Việc |
 |---|---|
 | `src/common/audio/transcode.ts` (mới) | `toWav16kMono(bytes, mimeType)`: `spawn('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0', '-ac', '1', '-ar', '16000', '-f', 'wav', '-acodec', 'pcm_s16le', 'pipe:1'])`. Đầu vào qua stdin, không ghi file tạm. Timeout 10 s thì kill. Giới hạn kích thước đầu ra. Lỗi ffmpeg chỉ trả mã `TRANSCODE_FAILED`, không log stderr (có thể chứa metadata). `ffmpegAvailable()` chạy `ffmpeg -version` một lần, nhớ kết quả. |

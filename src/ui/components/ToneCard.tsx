@@ -24,6 +24,7 @@ import {
 import {MaterialIcon} from '@ui/components/MaterialIcon';
 import {SaveToggle} from '@ui/components/SaveToggle';
 import {ShelfSurface} from '@ui/components/ShelfSurface';
+import {SkeletonBlock} from '@ui/components/Skeleton';
 import {
   VIDEO_PLAY_SIZE,
   VideoPlayButton,
@@ -289,6 +290,59 @@ export function ToneCard({
   );
 }
 
+/**
+ * A lesson card while its list loads: the same size, colour and shelf, with
+ * placeholder lines for the eyebrow, title, description and pill and a block
+ * for the cover. Place inside a `SkeletonGroup`.
+ */
+export function ToneCardSkeleton({
+  tone,
+  gutter,
+  testID,
+}: {
+  tone: CardTone;
+  gutter: number;
+  testID?: string;
+}) {
+  const {theme} = useAppTheme();
+  const {width} = useWindowDimensions();
+  const colors = cardColors(theme, tone);
+  const line = solidOver(withAlpha(colors.ink, 0.16), colors.face);
+  const artWidth = Math.max(0, (width - gutter * 2) * ART_SHARE);
+
+  return (
+    <View testID={testID}>
+      <ShelfSurface
+        borderRadius={CARD_RADIUS}
+        faceStyle={[cardStyles.skeletonFace, {backgroundColor: colors.face}]}
+        shelfColor={colors.shelf}
+        shelfHeight={CARD_SHELF_HEIGHT}
+      >
+        <SkeletonBlock
+          color={colors.blob}
+          height={CARD_HEIGHT}
+          radius={0}
+          style={cardStyles.art}
+          width={artWidth}
+        />
+        <View style={[cardStyles.copy, cardStyles.skeletonCopy]}>
+          <SkeletonBlock color={line} height={10} width={72} />
+          <SkeletonBlock color={line} height={18} width="92%" />
+          <SkeletonBlock color={line} height={18} width="64%" />
+          <SkeletonBlock color={line} height={11} width="54%" />
+          <SkeletonBlock
+            color={line}
+            height={26}
+            radius={theme.radius.pill}
+            style={cardStyles.skeletonPill}
+            width={92}
+          />
+        </View>
+      </ShelfSurface>
+    </View>
+  );
+}
+
 export function ActionPill({
   action,
   ink,
@@ -337,6 +391,16 @@ const cardStyles = StyleSheet.create({
     paddingRight: 8,
     paddingVertical: 14,
     width: '58%',
+  },
+  skeletonFace: {
+    height: CARD_HEIGHT,
+    overflow: 'hidden',
+  },
+  skeletonCopy: {
+    gap: 8,
+  },
+  skeletonPill: {
+    marginTop: 6,
   },
 });
 

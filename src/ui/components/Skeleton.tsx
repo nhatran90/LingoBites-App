@@ -3,6 +3,7 @@ import React, {
   useContext,
   useEffect,
   useId,
+  useMemo,
   useState,
 } from 'react';
 import {
@@ -10,7 +11,6 @@ import {
   type LayoutChangeEvent,
   type StyleProp,
   StyleSheet,
-  View,
   type ViewStyle,
 } from 'react-native';
 import Animated, {
@@ -37,6 +37,9 @@ const APPEAR_MS = 200;
 const FADE_OUT_MS = 140;
 /** One pass of the light across a block. */
 const SHIMMER_MS = 1300;
+/** One fade of a breathing block, dim and back taking twice this. */
+const PULSE_MS = 800;
+const PULSE_MIN_OPACITY = 0.5;
 /** Content rises this far into place when it replaces a skeleton. */
 const RISE_PX = 8;
 const RISE_MS = 320;
@@ -44,11 +47,21 @@ const RISE_STAGGER_MS = 45;
 /** Rows past this index arrive together (they are usually off screen). */
 const RISE_MAX_STAGGERED = 6;
 
-/** Shared shimmer clock: every block of one group sweeps in step. */
-const ShimmerContext = createContext<SharedValue<number> | null>(null);
+/**
+ * How the blocks of a group move: a light sweeping across them, or the
+ * blocks breathing (fading dim and back) in place.
+ */
+export type SkeletonMotion = 'shimmer' | 'pulse';
+
+/** Shared clock: every block of one group sweeps or breathes in step. */
+const ShimmerContext = createContext<{
+  motion: SkeletonMotion;
+  progress: SharedValue<number>;
+} | null>(null);
 
 type GroupProps = {
   children: React.ReactNode;
+  motion?: SkeletonMotion;
   style?: StyleProp<ViewStyle>;
   testID?: string;
 };
@@ -56,25 +69,36 @@ type GroupProps = {
 /**
  * Wraps the placeholder blocks of one loading screen: they fade in only
  * after a short delay (so a fast load never flashes) and fade out as the
- * content arrives. A soft light sweeps across every block in step; with
- * Reduce Motion the blocks stay still.
+ * content arrives. A soft light sweeps across every block in step, or with
+ * `motion="pulse"` every block breathes in step; with Reduce Motion the
+ * blocks stay still.
  */
-export function SkeletonGroup({children, style, testID}: GroupProps) {
+export function SkeletonGroup({
+  children,
+  motion = 'shimmer',
+  style,
+  testID,
+}: GroupProps) {
   const reducedMotion = useReducedMotion();
   const progress = useSharedValue(0);
+  const clock = useMemo(() => ({motion, progress}), [motion, progress]);
 
   useEffect(() => {
     if (reducedMotion) return;
+    const pulse = motion === 'pulse';
     progress.value = withRepeat(
-      withTiming(1, {duration: SHIMMER_MS, easing: Easing.inOut(Easing.ease)}),
+      withTiming(1, {
+        duration: pulse ? PULSE_MS : SHIMMER_MS,
+        easing: Easing.inOut(Easing.ease),
+      }),
       -1,
-      false,
+      pulse,
     );
     return () => cancelAnimation(progress);
-  }, [progress, reducedMotion]);
+  }, [motion, progress, reducedMotion]);
 
   return (
-    <ShimmerContext.Provider value={reducedMotion ? null : progress}>
+    <ShimmerContext.Provider value={reducedMotion ? null : clock}>
       <Animated.View
         accessibilityElementsHidden
         entering={FadeIn.delay(APPEAR_DELAY_MS).duration(APPEAR_MS)}
@@ -108,13 +132,20 @@ export function SkeletonBlock({
   style,
 }: BlockProps) {
   const {theme} = useAppTheme();
-  const progress = useContext(ShimmerContext);
+  const clock = useContext(ShimmerContext);
+  const progress = clock?.motion === 'shimmer' ? clock.progress : null;
+  const breath = clock?.motion === 'pulse' ? clock.progress : null;
   const [blockWidth, setBlockWidth] = useState(0);
   const onLayout = (event: LayoutChangeEvent) =>
     setBlockWidth(event.nativeEvent.layout.width);
+  const breathing = useAnimatedStyle(() => ({
+    opacity: breath
+      ? interpolate(breath.value, [0, 1], [1, PULSE_MIN_OPACITY])
+      : 1,
+  }));
 
   return (
-    <View
+    <Animated.View
       onLayout={progress ? onLayout : undefined}
       style={[
         styles.block,
@@ -125,6 +156,7 @@ export function SkeletonBlock({
           width,
         },
         style,
+        breathing,
       ]}
     >
       {progress && blockWidth > 0 ? (
@@ -135,7 +167,7 @@ export function SkeletonBlock({
           width={blockWidth}
         />
       ) : null}
-    </View>
+    </Animated.View>
   );
 }
 

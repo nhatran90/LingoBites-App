@@ -238,6 +238,31 @@ describe('DailyReviewScreen', () => {
     ).toBeGreaterThan(0);
   });
 
+  it('returns home from the summary with popToTop only, without a stray goBack', async () => {
+    seedCards(1);
+    const nav = navigation();
+    const tree = await renderScreen(
+      <DailyReviewScreen navigation={nav as never} />,
+    );
+
+    await revealCard(tree);
+    await act(async () => {
+      tree.root.findByProps({testID: 'rating-remembered'}).props.onPress();
+    });
+    await act(async () => {
+      tree.root
+        .find(
+          node =>
+            node.props.accessibilityLabel === 'Quay về Home' &&
+            typeof node.props.onPress === 'function',
+        )
+        .props.onPress();
+    });
+
+    expect(nav.popToTop).toHaveBeenCalledTimes(1);
+    expect(nav.goBack).not.toHaveBeenCalled();
+  });
+
   it('exits without confirmation', async () => {
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     seedCards(1);

@@ -191,6 +191,7 @@ describe('SpeakWordPanel', () => {
     const tree = await render();
     expect(text(tree)).toContain('Đọc to từ này');
     expect(text(tree)).toContain('/ˈskedʒ.uːl/ · lịch trình');
+    expect(text(tree)).toContain('Đọc to từ này, tối đa 15 giây.');
     await press(tree, 'speak-word-listen');
     expect(onSpeak).toHaveBeenCalledWith('schedule');
   });

@@ -52,34 +52,36 @@ export function SpeakWordButton({text, locked, onPress, testID}: Props) {
       ]}
       testID={testID}
     >
-      <View style={[styles.face, locked ? styles.lockedFace : null]}>
-        <View style={[styles.bubble, locked ? styles.lockedBubble : null]}>
-          <MaterialIcon color={colors.text.inverse} name="mic" size={22} />
-        </View>
-        <Text
-          maxFontSizeMultiplier={1.3}
-          style={[styles.label, locked ? styles.lockedLabel : null]}
-        >
-          {label}
-        </Text>
-        <MaterialIcon
-          color={locked ? colors.outline : colors.primary}
-          name={locked ? 'lock' : 'chevron_right'}
-          size={24}
-        />
-      </View>
-      {locked ? (
-        <View style={styles.notice} testID={testID && `${testID}-locked`}>
-          <MaterialIcon
-            color={colors.onTertiaryContainer}
-            name="warning"
-            size={20}
-          />
-          <Text maxFontSizeMultiplier={1.3} style={styles.noticeText}>
-            {t('speakWord.locked_notice')}
+      <View style={styles.clip}>
+        <View style={[styles.face, locked ? styles.lockedFace : null]}>
+          <View style={[styles.bubble, locked ? styles.lockedBubble : null]}>
+            <MaterialIcon color={colors.text.inverse} name="mic" size={22} />
+          </View>
+          <Text
+            maxFontSizeMultiplier={1.3}
+            style={[styles.label, locked ? styles.lockedLabel : null]}
+          >
+            {label}
           </Text>
+          <MaterialIcon
+            color={locked ? colors.outline : colors.primary}
+            name={locked ? 'lock' : 'chevron_right'}
+            size={24}
+          />
         </View>
-      ) : null}
+        {locked ? (
+          <View style={styles.notice} testID={testID && `${testID}-locked`}>
+            <MaterialIcon
+              color={colors.onTertiaryContainer}
+              name="warning"
+              size={20}
+            />
+            <Text maxFontSizeMultiplier={1.3} style={styles.noticeText}>
+              {t('speakWord.locked_notice')}
+            </Text>
+          </View>
+        ) : null}
+      </View>
     </Pressable>
   );
 }
@@ -90,8 +92,14 @@ function makeStyles(theme: AppTheme) {
     button: {
       backgroundColor: colors.accentSoft,
       borderRadius: 20,
-      overflow: 'hidden',
       ...getStickerEdge(4, colors.outlineVariant),
+    },
+    // Clips the locked face and notice to the rounded corners. It sits
+    // inside the button: `overflow: 'hidden'` on the button itself would
+    // also clip its iOS sticker edge, unlike "Viết từ" beside it.
+    clip: {
+      borderRadius: 20,
+      overflow: 'hidden',
     },
     lockedButton: {
       backgroundColor: colors.surface,

@@ -10,15 +10,16 @@ export type FlowProgressBarProps = {
   step: FlowStep;
   /** Steps whose activities all have an attempt. */
   doneSteps: ReadonlySet<number>;
-  /** Steps with nothing to do (an empty step 1): shown done, not tappable. */
+  /** Steps with nothing to do (an empty step 1): left out of the bar. */
   skippedSteps?: ReadonlySet<number>;
   onSelect: (step: FlowStep) => void;
 };
 
 /**
- * The six steps as the app's progress notes: done steps mint, the open step
- * coral, skipped ones faded. An invisible button lies over each note, so
- * tapping it opens that step, like the old step chips.
+ * The steps as the app's progress notes: done steps mint, the open step
+ * coral; skipped ones are left out and the rest numbered as shown. An
+ * invisible button lies over each note, so tapping it opens that step, like
+ * the old step chips.
  */
 export function FlowProgressBar({
   step,
@@ -27,11 +28,17 @@ export function FlowProgressBar({
   onSelect,
 }: FlowProgressBarProps) {
   const {t} = useTranslation();
+  const steps = FLOW_STEPS.filter(
+    value => value === step || !skippedSteps?.has(value),
+  );
   return (
     <View
       accessibilityRole="progressbar"
       accessibilityValue={{
-        text: t('lessonFlow.progress_a11y', {step, total: FLOW_STEPS.length}),
+        text: t('lessonFlow.progress_a11y', {
+          step: steps.indexOf(step) + 1,
+          total: steps.length,
+        }),
       }}
       style={styles.row}
       testID="lesson-flow-progress"
@@ -42,29 +49,25 @@ export function FlowProgressBar({
         style={styles.bar}
       >
         <AppProgressBar
-          current={step - 1}
-          done={toIndexes(doneSteps)}
-          skipped={skippedSteps && toIndexes(skippedSteps)}
-          total={FLOW_STEPS.length}
+          current={steps.indexOf(step)}
+          done={toIndexes(steps, doneSteps)}
+          total={steps.length}
         />
       </View>
-      {FLOW_STEPS.map(value => {
-        const skipped = skippedSteps?.has(value) ?? false;
+      {steps.map((value, index) => {
         const done = doneSteps.has(value);
         return (
           <Pressable
             accessibilityHint={t('lessonFlow.step_chip_hint')}
             accessibilityLabel={t('lessonFlow.step_heading', {
-              step: value,
+              step: index + 1,
               label: t(`lessonFlow.step_${value}`),
             })}
             accessibilityRole="button"
             accessibilityState={{
               selected: value === step,
               checked: done,
-              disabled: skipped && value !== step,
             }}
-            disabled={skipped && value !== step}
             key={value}
             onPress={() => onSelect(value)}
             style={styles.hit}
@@ -76,9 +79,14 @@ export function FlowProgressBar({
   );
 }
 
-/** Steps are numbered from 1; the progress notes count from 0. */
-function toIndexes(steps: ReadonlySet<number>): Set<number> {
-  return new Set([...steps].map(value => value - 1));
+/** The positions of `picked` among the shown steps (notes count from 0). */
+function toIndexes(
+  steps: readonly FlowStep[],
+  picked: ReadonlySet<number>,
+): Set<number> {
+  return new Set(
+    steps.flatMap((value, index) => (picked.has(value) ? [index] : [])),
+  );
 }
 
 const styles = StyleSheet.create({

@@ -9,7 +9,7 @@ import {getStickerEdge} from '../theme/hardShadow';
 import {MaterialIcon} from './MaterialIcon';
 
 type Props = {
-  /** The word or phrase on the card: a phrase reads "Viết cụm từ". */
+  /** The word or phrase on the card. */
   text: string;
   onPress: () => void;
   testID?: string;
@@ -27,21 +27,22 @@ export function canWriteWord(text: string): boolean {
 }
 
 /**
- * "Viết từ" / "Viết cụm từ" under a word card, in the app's sticker look:
- * a light blue face on a hard edge with a pencil tile, so it stands out on
- * the card without competing with the screen's main button.
+ * "Viết từ" in a word card's practice row (`WordPracticeBar`), in the app's
+ * sticker look: a light mint face on a hard edge with a pencil tile, half
+ * the row wide beside "Đọc từ", so it stands out without competing with the
+ * screen's main button.
  */
 export function WriteWordButton({text, onPress, testID}: Props) {
   const {theme} = useAppTheme();
   const {t} = useTranslation();
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  const phrase = answerWords(text).length > 1;
-  const label = t(phrase ? 'writeWord.button_phrase' : 'writeWord.button');
+  const label = t('writeWord.button');
   return (
     <Pressable
       accessibilityHint={t('writeWord.button_hint')}
       accessibilityLabel={label}
       accessibilityRole="button"
+      accessibilityValue={{text}}
       onPress={onPress}
       style={({pressed}) => [styles.button, pressed && styles.pressed]}
       testID={testID}
@@ -49,14 +50,9 @@ export function WriteWordButton({text, onPress, testID}: Props) {
       <View style={styles.bubble}>
         <MaterialIcon color={theme.colors.text.inverse} name="edit" size={22} />
       </View>
-      <Text maxFontSizeMultiplier={1.3} style={styles.label}>
+      <Text maxFontSizeMultiplier={1.3} numberOfLines={1} style={styles.label}>
         {label}
       </Text>
-      <MaterialIcon
-        color={theme.colors.primary}
-        name="chevron_right"
-        size={24}
-      />
     </Pressable>
   );
 }
@@ -77,17 +73,18 @@ function makeStyles(theme: AppTheme) {
       alignItems: 'center',
       backgroundColor: colors.accentSoft,
       borderRadius: 20,
+      flex: 1,
       flexDirection: 'row',
-      gap: theme.spacing.md,
+      gap: theme.spacing.sm + 2,
       minHeight: 56,
       paddingLeft: theme.spacing.sm,
-      paddingRight: theme.spacing.md,
+      paddingRight: theme.spacing.sm,
       ...getStickerEdge(4, colors.outlineVariant),
     },
     label: {
       color: colors.primary,
       flex: 1,
-      fontSize: 18,
+      fontSize: 16,
       fontWeight: '800',
     },
     pressed: {

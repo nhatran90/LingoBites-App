@@ -262,9 +262,9 @@ describe('SpeakWordButton', () => {
     return {tree, onPress};
   }
 
-  it('reads "Nói từ" for a word and "Nói câu" for a sentence', async () => {
-    expect(text((await button(false)).tree)).toContain('Nói từ');
-    expect(text((await button(false, 'look after')).tree)).toContain('Nói câu');
+  it('reads "Đọc từ" for a word and a phrase alike', async () => {
+    expect(text((await button(false)).tree)).toContain('Đọc từ');
+    expect(text((await button(false, 'look after')).tree)).toContain('Đọc từ');
   });
 
   it('says why it is locked and still answers a press (to open Settings)', async () => {

@@ -45,6 +45,14 @@ export type {ReadingSource, ReadingTarget} from './logic/readingTarget';
 export {useSpeakWordAccess} from './logic/useSpeakWordAccess';
 export type {SpeakWordAccess} from './logic/useSpeakWordAccess';
 export {SpeakWordButton} from './components/SpeakWordButton';
+export {WordPracticeBar} from './components/WordPracticeBar';
+export {WordPracticeView} from './components/WordPracticeView';
+export {useWordPractice} from './logic/useWordPractice';
+export type {
+  WordPractice,
+  WordPracticeCard,
+  WordPracticeMode,
+} from './logic/useWordPractice';
 export {SpeakWordPanel} from './components/SpeakWordPanel';
 export type {SpeakWordPanelProps} from './components/SpeakWordPanel';
 export {SpeakResult} from './components/SpeakResult';

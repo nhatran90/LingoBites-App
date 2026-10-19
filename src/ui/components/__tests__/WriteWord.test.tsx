@@ -28,7 +28,7 @@ describe('Viết từ', () => {
     expect(canWriteWord('…')).toBe(false);
   });
 
-  it('labels a phrase "Viết cụm từ"', () => {
+  it('labels a word and a phrase "Viết từ" alike', () => {
     const word = renderWithTheme(
       <WriteWordButton onPress={jest.fn()} testID="b" text="borrow" />,
     );
@@ -36,7 +36,7 @@ describe('Viết từ', () => {
     const phrase = renderWithTheme(
       <WriteWordButton onPress={jest.fn()} testID="b" text="take away" />,
     );
-    expect(labelOf(phrase)).toBe('Viết cụm từ');
+    expect(labelOf(phrase)).toBe('Viết từ');
   });
 
   it('offers word tiles for a phrase and shows the answer when wrong', () => {

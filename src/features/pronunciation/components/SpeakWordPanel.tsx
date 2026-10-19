@@ -4,6 +4,7 @@ import {ActivityIndicator, Pressable, StyleSheet, View} from 'react-native';
 
 import {AppButton} from '@ui/components/AppButton';
 import {AppText} from '@ui/components/AppText';
+import {ListenButtons, SLOW_TTS_RATE} from '@ui/components/ListenButtons';
 import {MaterialIcon} from '@ui/components/MaterialIcon';
 import {type AppTheme, useAppTheme} from '@ui/theme';
 import {getStickerEdge} from '@ui/theme/hardShadow';
@@ -19,9 +20,6 @@ import {
 } from '../logic/usePronunciationPractice';
 import {PronunciationConsentPrompt} from './PronunciationConsentPrompt';
 import {SpeakResult} from './SpeakResult';
-
-/** Slow reading of a word, as the lesson's "listen slowly". */
-const SLOW_RATE = 0.3;
 
 export type SpeakWordPanelProps = {
   /** The card's word or sentence, read aloud and scored. */
@@ -72,7 +70,7 @@ export function SpeakWordPanel({
           <SpeakResult
             attempt={state.attempt}
             onListenSlow={
-              onSpeak ? word => onSpeak(word, SLOW_RATE) : undefined
+              onSpeak ? word => onSpeak(word, SLOW_TTS_RATE) : undefined
             }
           />
         ) : (
@@ -88,14 +86,12 @@ export function SpeakWordPanel({
                 {[ipa, meaningVi].filter(Boolean).join(' · ')}
               </AppText>
             ) : null}
-            {listenModel ? (
-              <AppButton
-                accessibilityHint={t('pronunciation.listen_model_hint')}
-                iconLeft="volume_up"
-                onPress={listenModel}
+            {onSpeak ? (
+              <ListenButtons
+                onListen={() => onSpeak(text)}
+                onListenSlow={() => onSpeak(text, SLOW_TTS_RATE)}
+                size="row"
                 testID={`${testID}-listen`}
-                title={t('pronunciation.listen_model')}
-                variant="outline"
               />
             ) : null}
           </View>

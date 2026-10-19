@@ -6,14 +6,13 @@ import {MaterialIcon} from '@ui/components/MaterialIcon';
 import {type AppTheme, useAppTheme} from '@ui/theme';
 import {getStickerEdge} from '@ui/theme/hardShadow';
 
-import {isSentence} from '../logic/readingTarget';
-
 type Props = {
-  /** The card's word or sentence: a sentence reads "Nói câu". */
+  /** The card's word or sentence. */
   text: string;
   /**
    * The learner has not turned on "Chấm phát âm bằng máy": the button is
-   * dimmed, says so, and `onPress` opens Settings instead.
+   * grey with a lock, says where to turn it on, and `onPress` opens Settings
+   * instead.
    */
   locked: boolean;
   onPress: () => void;
@@ -21,18 +20,17 @@ type Props = {
 };
 
 /**
- * "Nói từ" / "Nói câu" under a pack or review card, beside "Viết từ" and
- * in the same sticker look (a light face on a hard edge with a microphone
- * tile). Locked, it turns grey with a lock and a yellow notice below; the
- * whole button stays pressable and leads to Settings.
+ * "Đọc từ" in a word card's practice row (`WordPracticeBar`), beside
+ * "Viết từ" and in the same sticker look (a light face on a hard edge with
+ * a microphone tile). Locked, it turns grey with a lock and a short
+ * "Bật trong Cài đặt" line; the whole button stays pressable and leads to
+ * Settings.
  */
 export function SpeakWordButton({text, locked, onPress, testID}: Props) {
   const {theme} = useAppTheme();
   const {t} = useTranslation();
   const styles = useMemo(() => makeStyles(theme), [theme]);
-  const label = t(
-    isSentence(text) ? 'speakWord.button_sentence' : 'speakWord.button',
-  );
+  const label = t('speakWord.button');
   const {colors} = theme;
 
   return (
@@ -44,42 +42,39 @@ export function SpeakWordButton({text, locked, onPress, testID}: Props) {
         locked ? `${label}. ${t('speakWord.locked_notice')}` : label
       }
       accessibilityRole="button"
+      accessibilityValue={{text}}
       onPress={onPress}
       style={({pressed}) => [
         styles.button,
         locked ? styles.lockedButton : null,
-        pressed && styles.pressed,
+        pressed && (locked ? styles.lockedPressed : styles.pressed),
       ]}
       testID={testID}
     >
-      <View style={styles.clip}>
-        <View style={[styles.face, locked ? styles.lockedFace : null]}>
-          <View style={[styles.bubble, locked ? styles.lockedBubble : null]}>
-            <MaterialIcon color={colors.text.inverse} name="mic" size={22} />
-          </View>
+      <View style={[styles.bubble, locked ? styles.lockedBubble : null]}>
+        <MaterialIcon
+          color={locked ? colors.text.secondary : colors.text.inverse}
+          name={locked ? 'lock' : 'mic'}
+          size={20}
+        />
+      </View>
+      <View style={styles.text}>
+        <Text
+          maxFontSizeMultiplier={1.3}
+          numberOfLines={1}
+          style={[styles.label, locked ? styles.lockedLabel : null]}
+        >
+          {label}
+        </Text>
+        {locked ? (
           <Text
             maxFontSizeMultiplier={1.3}
-            style={[styles.label, locked ? styles.lockedLabel : null]}
+            numberOfLines={1}
+            style={styles.notice}
+            testID={testID && `${testID}-locked`}
           >
-            {label}
+            {t('speakWord.locked_short')}
           </Text>
-          <MaterialIcon
-            color={locked ? colors.outline : colors.primary}
-            name={locked ? 'lock' : 'chevron_right'}
-            size={24}
-          />
-        </View>
-        {locked ? (
-          <View style={styles.notice} testID={testID && `${testID}-locked`}>
-            <MaterialIcon
-              color={colors.onTertiaryContainer}
-              name="warning"
-              size={20}
-            />
-            <Text maxFontSizeMultiplier={1.3} style={styles.noticeText}>
-              {t('speakWord.locked_notice')}
-            </Text>
-          </View>
         ) : null}
       </View>
     </Pressable>
@@ -88,33 +83,22 @@ export function SpeakWordButton({text, locked, onPress, testID}: Props) {
 
 function makeStyles(theme: AppTheme) {
   const {colors} = theme;
+  const lockedEdge = theme.shelf?.secondary.color ?? colors.outlineVariant;
   return StyleSheet.create({
     button: {
+      alignItems: 'center',
       backgroundColor: colors.accentSoft,
       borderRadius: 20,
+      flex: 1,
+      flexDirection: 'row',
+      gap: theme.spacing.sm + 2,
+      minHeight: 56,
+      paddingHorizontal: theme.spacing.sm,
       ...getStickerEdge(4, colors.outlineVariant),
     },
-    // Clips the locked face and notice to the rounded corners. It sits
-    // inside the button: `overflow: 'hidden'` on the button itself would
-    // also clip its iOS sticker edge, unlike "Viết từ" beside it.
-    clip: {
-      borderRadius: 20,
-      overflow: 'hidden',
-    },
     lockedButton: {
-      backgroundColor: colors.surface,
-    },
-    face: {
-      alignItems: 'center',
-      flexDirection: 'row',
-      gap: theme.spacing.md,
-      minHeight: 56,
-      paddingLeft: theme.spacing.sm,
-      paddingRight: theme.spacing.md,
-      paddingVertical: theme.spacing.sm,
-    },
-    lockedFace: {
-      backgroundColor: colors.surfaceHigh,
+      backgroundColor: colors.surfaceContainer,
+      ...getStickerEdge(4, lockedEdge),
     },
     bubble: {
       alignItems: 'center',
@@ -126,35 +110,32 @@ function makeStyles(theme: AppTheme) {
       ...getStickerEdge(3, colors.primaryPressed),
     },
     lockedBubble: {
-      backgroundColor: colors.outlineVariant,
-      ...getStickerEdge(0, colors.outlineVariant),
+      backgroundColor: colors.surface,
+      ...getStickerEdge(3, lockedEdge),
+    },
+    text: {
+      flex: 1,
     },
     label: {
       color: colors.primary,
-      flex: 1,
-      fontSize: 18,
+      fontSize: 16,
       fontWeight: '800',
     },
     lockedLabel: {
-      color: colors.outline,
+      color: colors.text.secondary,
     },
     notice: {
-      alignItems: 'flex-start',
-      backgroundColor: colors.tertiarySoft,
-      flexDirection: 'row',
-      gap: theme.spacing.sm,
-      paddingHorizontal: theme.spacing.md,
-      paddingVertical: theme.spacing.sm,
-    },
-    noticeText: {
-      color: colors.onTertiaryContainer,
-      flex: 1,
-      fontSize: 14,
+      color: colors.text.secondary,
+      fontSize: 12,
       fontWeight: '700',
     },
     pressed: {
       transform: [{translateY: 2}],
       ...getStickerEdge(2, colors.outlineVariant),
+    },
+    lockedPressed: {
+      transform: [{translateY: 2}],
+      ...getStickerEdge(2, lockedEdge),
     },
   });
 }

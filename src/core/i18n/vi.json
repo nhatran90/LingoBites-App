@@ -1908,6 +1908,13 @@
     "voice_missing": "Máy chưa có giọng tiếng Anh (Mỹ) nên chưa đọc được. Hãy cài thêm giọng trong cài đặt hệ thống.",
     "unavailable": "Máy này chưa phát được âm thanh."
   },
+  "listen": {
+    "normal": "Nghe",
+    "normal_hint": "Đọc to bằng giọng mẫu",
+    "slow": "Nghe chậm",
+    "slow_hint": "Đọc to chậm hơn để nghe rõ từng âm",
+    "slow_badge": "0.5×"
+  },
   "patternTense": {
     "filter_all": "Tất cả",
     "filter_function": "Ý muốn nói",
@@ -1986,7 +1993,6 @@
   },
   "writeWord": {
     "button": "Viết từ",
-    "button_phrase": "Viết cụm từ",
     "button_hint": "Nhìn nghĩa tiếng Việt và ghép lại từ bằng bàn phím ô chữ",
     "title": "Viết từ này bằng tiếng Anh",
     "title_phrase": "Viết cụm từ này bằng tiếng Anh",
@@ -2001,10 +2007,10 @@
     "done_hint": "Quay lại thẻ từ"
   },
   "speakWord": {
-    "button": "Nói từ",
-    "button_sentence": "Nói câu",
+    "button": "Đọc từ",
     "button_hint": "Đọc to rồi xem máy chấm từng âm",
     "locked_notice": "Chưa bật “Chấm phát âm bằng máy”. Bấm để mở Cài đặt và bật.",
+    "locked_short": "Bật trong Cài đặt",
     "locked_hint": "Mở Cài đặt để bật chấm phát âm",
     "title": "Đọc to từ này",
     "title_sentence": "Đọc to câu này",

@@ -80,7 +80,7 @@ export function WriteWordPanel({
             onPress={onDone}
             testID={`${testID}-cancel`}
             title={t('writeWord.cancel')}
-            variant="ghost"
+            variant="secondary"
           />
           <AppButton
             accessibilityHint={t('writeWord.check_hint')}

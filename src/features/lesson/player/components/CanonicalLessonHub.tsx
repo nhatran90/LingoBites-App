@@ -189,16 +189,28 @@ export function CanonicalLessonHub({
     () => collectLessonVocabulary(snapshot, analyses),
     [snapshot, analyses],
   );
+  // Rows with nothing to open are left out. Words and phrases have their own
+  // tab; an empty vocabulary row stays only where analysing a sentence fills it.
+  const exploreRows = sectionRows.filter(row =>
+    row.section === 'sentences'
+      ? row.count > 0
+      : row.section === 'vocabulary'
+        ? row.count === 0 && !catalogLesson && sentences.length > 0
+        : true,
+  );
   const path = useMemo(() => {
     if (!flowEntry?.available || !onOpenFlow) return null;
-    const current = flowEntry.resumeAt ?? 1;
+    // Step 1 with nothing to review is left out, not shown as skipped.
+    const firstStep = flowEntry.reviewSkipped ? 2 : 1;
+    const current = flowEntry.resumeAt ?? firstStep;
     return {
-      steps: FLOW_STEPS.map(step => ({
+      steps: FLOW_STEPS.filter(step => step >= firstStep).map(step => ({
         step,
         label: t(`lessonFlow.step_${step}`),
       })),
       current,
       finished: current === 6,
+      reviewSkipped: flowEntry.reviewSkipped && flowEntry.resumeAt === null,
       nextActivities: blocksOfStep(snapshot, current).filter(
         block => block.type === 'activity',
       ).length,
@@ -325,6 +337,9 @@ export function CanonicalLessonHub({
           current={path.current}
           finished={path.finished}
           nextActivities={path.nextActivities}
+          note={
+            path.reviewSkipped ? t('lessonPlayer.path_review_skipped') : null
+          }
           onOpen={onOpenFlow!}
           steps={path.steps}
         />
@@ -340,10 +355,13 @@ export function CanonicalLessonHub({
       />
 
       <View style={styles.exploreSection}>
-        <SectionHeader title={t('lessonPlayer.explore_title')} />
-        {sectionRows
-          .filter(row => !(row.section === 'vocabulary' && row.count > 0))
-          .map(row => (
+        {exploreRows.length > 0 ||
+        canPractice ||
+        replay ||
+        onOpenCompose ? (
+          <SectionHeader title={t('lessonPlayer.explore_title')} />
+        ) : null}
+        {exploreRows.map(row => (
             <ExploreRow
               key={row.section}
               catalogLesson={catalogLesson}

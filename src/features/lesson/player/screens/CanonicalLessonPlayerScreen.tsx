@@ -689,7 +689,13 @@ export function CanonicalLessonPlayerScreen({navigation, route}: Props) {
     : !flowEntry.available
       ? t('lessonPlayer.start_learning')
       : flowEntry.resumeAt === null
-        ? t('lessonFlow.start_at', {label: t('lessonFlow.step_1')})
+        ? t('lessonFlow.start_at', {
+            label: t(
+              flowEntry.reviewSkipped
+                ? 'lessonFlow.step_2'
+                : 'lessonFlow.step_1',
+            ),
+          })
         : flowEntry.resumeAt === 6
           ? t('lessonFlow.review')
           : t('lessonFlow.continue_at', {

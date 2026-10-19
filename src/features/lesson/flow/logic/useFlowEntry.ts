@@ -7,6 +7,7 @@ import {
   listLessonActivityAttempts,
 } from '@core/sync/activityAttempts';
 
+import {hasRelatedReview} from '../components/StepReview';
 import {
   type FlowStep,
   isFlowLesson,
@@ -21,6 +22,8 @@ export type FlowEntry =
       /** Where the player opens; `null` before anything was done. */
       resumeAt: FlowStep | null;
       practiceDone: boolean;
+      /** Step 1 has nothing to review: the lesson starts at step 2. */
+      reviewSkipped: boolean;
     };
 
 function readAttempts(lessonId: string): LessonActivityAttemptRow[] {
@@ -54,6 +57,7 @@ export function useFlowEntry(
       available: true,
       resumeAt: attempts.length > 0 ? resumeStep(snapshot, attempts) : null,
       practiceDone: practiceCompleted(snapshot, attempts),
+      reviewSkipped: !hasRelatedReview(snapshot),
     };
   }, [snapshot, attempts]);
 }

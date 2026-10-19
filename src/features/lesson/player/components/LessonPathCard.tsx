@@ -23,6 +23,7 @@ export type LessonPathStep = {
 };
 
 type Props = {
+  /** The parts shown, in order; numbered 1… as shown, not by `step`. */
   steps: LessonPathStep[];
   /** The part the learner is on; every earlier part counts as done. */
   current: number;
@@ -30,6 +31,8 @@ type Props = {
   finished: boolean;
   /** Activities in the current part; 0 hides the count. */
   nextActivities: number;
+  /** A line under "next", e.g. why the review part is left out. */
+  note?: string | null;
   onOpen: () => void;
 };
 
@@ -38,6 +41,7 @@ export function LessonPathCard({
   current,
   finished,
   nextActivities,
+  note,
   onOpen,
 }: Props) {
   const {theme} = useAppTheme();
@@ -97,7 +101,7 @@ export function LessonPathCard({
                       done || now ? styles.dotTextOn : null,
                     ]}
                   >
-                    {done ? '✓' : item.step}
+                    {done ? '✓' : index + 1}
                   </AppText>
                 </View>
               </React.Fragment>
@@ -139,6 +143,16 @@ export function LessonPathCard({
             </AppText>
           ) : null}
         </View>
+        {note ? (
+          <AppText
+            color="secondary"
+            style={styles.note}
+            testID="lesson-path-note"
+            variant="caption"
+          >
+            {note}
+          </AppText>
+        ) : null}
       </View>
     </View>
   );
@@ -225,6 +239,9 @@ function makeStyles(theme: AppTheme) {
       marginTop: 4,
       paddingHorizontal: 12,
       paddingVertical: 9,
+    },
+    note: {
+      paddingHorizontal: 4,
     },
     nextDone: {
       backgroundColor: theme.colors.accentSoft,

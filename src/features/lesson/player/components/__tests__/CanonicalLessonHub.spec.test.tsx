@@ -121,6 +121,8 @@ describe('CanonicalLessonHub with a lesson specification', () => {
     expect(byTestId(tree, 'canonical-hub-explore-grammar')).toHaveLength(0);
     // Words & phrases have their own tab, not an explore row.
     expect(byTestId(tree, 'canonical-hub-explore-vocabulary')).toHaveLength(0);
+    // A lesson without sentences has no "Học từng câu" row.
+    expect(byTestId(tree, 'canonical-hub-explore-sentences')).toHaveLength(0);
     expect(textOf(tree, 'lesson-content-tab-words')).toContain('Từ & cụm');
     expect(textOf(tree, 'canonical-hub-explore-patterns')).toContain(
       '1 mẫu câu',
@@ -147,9 +149,9 @@ describe('CanonicalLessonHub with a lesson specification', () => {
     expect(textOf(tree, 'canonical-hub-explore-grammar')).toContain(
       'Ngữ pháp trong ngữ cảnh',
     );
-    expect(textOf(tree, 'canonical-hub-explore-vocabulary')).toContain(
-      'Từ vựng chính',
-    );
+    // No sentence to read or analyse: those rows are left out.
+    expect(byTestId(tree, 'canonical-hub-explore-sentences')).toHaveLength(0);
+    expect(byTestId(tree, 'canonical-hub-explore-vocabulary')).toHaveLength(0);
     expect(byTestId(tree, 'canonical-hub-explore-patterns')).toHaveLength(0);
   });
 });

@@ -28,6 +28,7 @@ export type LessonMapProps = {
   snapshot: LessonSnapshot;
   /** The step "Bắt đầu học" opens (2 when step 1 is skipped). */
   nextStep: FlowStep;
+  /** Steps with nothing to do (an empty step 1): left off the path. */
   skippedSteps: ReadonlySet<number>;
   onOpenStep: (step: FlowStep) => void;
 };
@@ -45,15 +46,15 @@ const STEP_ICONS: Record<FlowStep, HandoffIconName> = {
 const STOP_X = [0.26, 0.68, 0.3, 0.68, 0.3, 0.68];
 const ROW = 88;
 const TOP = 44;
-const PATH_HEIGHT = TOP + ROW * 5 + 52;
 const NODE = 60;
 const NEXT_NODE = 74;
 const HALO = 92;
 const LABEL_WIDTH = 168;
 
 /**
- * Redesign: the lesson's goal and its six steps as a winding path, shown the
- * first time a lesson is opened (no attempt yet). Each stop opens its step.
+ * Redesign: the lesson's goal and its steps as a winding path, shown the
+ * first time a lesson is opened (no attempt yet). Each stop opens its step;
+ * a skipped step has no stop.
  */
 export function LessonMap({
   snapshot,
@@ -75,8 +76,12 @@ export function LessonMap({
     [snapshot],
   );
 
+  const steps = FLOW_STEPS.filter(
+    step => step === nextStep || !skippedSteps.has(step),
+  );
+  const pathHeight = TOP + ROW * (steps.length - 1) + 52;
+
   const describe = (step: FlowStep): string => {
-    if (skippedSteps.has(step)) return t('lessonFlow.map_skipped');
     if (step === 1) return t('lessonFlow.map_review');
     if (step === 6) return t('lessonFlow.map_result');
     const blocks = blocksOfStep(snapshot, step);
@@ -93,8 +98,8 @@ export function LessonMap({
       : t('lessonFlow.map_read');
   };
 
-  const centers = STOP_X.map((share, index) => ({
-    x: share * width,
+  const centers = steps.map((_, index) => ({
+    x: STOP_X[index]! * width,
     y: TOP + index * ROW,
   }));
   const segment = (from: number, to: number) =>
@@ -107,7 +112,7 @@ export function LessonMap({
         return `C ${previous.x} ${middle}, ${point.x} ${middle}, ${point.x} ${point.y}`;
       })
       .join(' ');
-  const nextIndex = FLOW_STEPS.indexOf(nextStep);
+  const nextIndex = steps.indexOf(nextStep);
 
   return (
     <View style={themedStyles.container} testID="lesson-flow-map">
@@ -157,11 +162,11 @@ export function LessonMap({
         onLayout={(event: LayoutChangeEvent) =>
           setMeasured(event.nativeEvent.layout.width)
         }
-        style={themedStyles.path}
+        style={{height: pathHeight}}
       >
         {width > 0 ? (
           <Svg
-            height={PATH_HEIGHT}
+            height={pathHeight}
             pointerEvents="none"
             style={StyleSheet.absoluteFill}
             width={width}
@@ -186,9 +191,8 @@ export function LessonMap({
           </Svg>
         ) : null}
         {width > 0
-          ? FLOW_STEPS.map((step, index) => {
+          ? steps.map((step, index) => {
               const center = centers[index]!;
-              const skipped = skippedSteps.has(step);
               const next = step === nextStep;
               const last = step === 6;
               const size = next ? NEXT_NODE : NODE;
@@ -209,8 +213,6 @@ export function LessonMap({
                     accessibilityHint={t('lessonFlow.step_chip_hint')}
                     accessibilityLabel={`${label}. ${describe(step)}`}
                     accessibilityRole="button"
-                    accessibilityState={{disabled: skipped}}
-                    disabled={skipped}
                     onPress={() => onOpenStep(step)}
                     style={[
                       themedStyles.node,
@@ -223,23 +225,17 @@ export function LessonMap({
                       },
                       next
                         ? themedStyles.nodeNext
-                        : skipped
-                          ? themedStyles.nodeSkipped
-                          : last
-                            ? themedStyles.nodeLast
-                            : themedStyles.nodeUpcoming,
+                        : last
+                          ? themedStyles.nodeLast
+                          : themedStyles.nodeUpcoming,
                     ]}
                     testID={`lesson-flow-step-${step}`}
                   >
                     <MaterialIcon
                       color={
-                        next
-                          ? theme.colors.accentInk
-                          : skipped
-                            ? theme.colors.primary
-                            : theme.colors.text.muted
+                        next ? theme.colors.accentInk : theme.colors.text.muted
                       }
-                      name={skipped ? 'check_circle' : STEP_ICONS[step]}
+                      name={STEP_ICONS[step]}
                       size={next ? 32 : 26}
                     />
                   </Pressable>
@@ -382,10 +378,6 @@ function makeStyles(theme: AppTheme) {
       backgroundColor: colors.accent,
       ...getStickerFace(theme, 5),
     },
-    nodeSkipped: {
-      backgroundColor: colors.accentSoft,
-      ...getStickerFace(theme, 0),
-    },
     nodeUpcoming: {
       backgroundColor: colors.surface,
       borderColor: colors.outlineVariant,
@@ -393,9 +385,6 @@ function makeStyles(theme: AppTheme) {
     },
     onPrimary: {
       color: colors.text.inverse,
-    },
-    path: {
-      height: PATH_HEIGHT,
     },
     pill: {
       backgroundColor: colors.overlayLight,

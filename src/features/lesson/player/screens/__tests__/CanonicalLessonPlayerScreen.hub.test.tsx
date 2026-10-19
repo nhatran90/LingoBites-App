@@ -531,11 +531,14 @@ describe('CanonicalLessonPlayerScreen lesson hub', () => {
     expect(has(tree, 'canonical-hub-start')).toBe(false);
     // G6: no manual "complete" for a curriculum lesson.
     expect(has(tree, 'canonical-hub-complete')).toBe(false);
-    // The button names the part to start, not a step number.
+    // The button names the part to start, not a step number. Nothing to
+    // review: the lesson starts at "Nghe hiểu" and the path leaves step 1 out.
     expect(pressable(tree, 'canonical-hub-start-flow').props.label).toBe(
-      'Bắt đầu · Ôn liên quan',
+      'Bắt đầu · Nghe hiểu',
     );
-    expect(has(tree, 'lesson-path-step-1-current')).toBe(true);
+    expect(has(tree, 'lesson-path-step-2-current')).toBe(true);
+    expect(has(tree, 'lesson-path-step-1')).toBe(false);
+    expect(has(tree, 'lesson-path-note')).toBe(true);
     act(() => {
       pressable(tree, 'canonical-hub-start-flow').props.onPress();
     });

@@ -152,12 +152,9 @@ describe('LessonFlowPlayerScreen (shell)', () => {
     const {tree} = renderScreen();
     expect(has(tree, 'lesson-flow-review-empty')).toBe(false);
     expect(has(tree, 'lesson-flow-step-empty')).toBe(false);
-    const stepOne = tree.root.find(
-      node =>
-        node.props.testID === 'lesson-flow-step-1' &&
-        typeof node.props.onPress === 'function',
-    );
-    expect(stepOne.props.disabled).toBe(true);
+    // The empty step is left off the map, not shown as skipped.
+    expect(has(tree, 'lesson-flow-step-1')).toBe(false);
+    expect(has(tree, 'lesson-flow-step-2')).toBe(true);
   });
 
   it('says when the lesson has no steps', () => {

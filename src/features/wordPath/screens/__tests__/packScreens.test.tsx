@@ -157,7 +157,7 @@ describe('PackLearnScreen', () => {
         route={{params: {packId: 'pack-2'}}}
       />,
     );
-    press(tree, 'pack-learn-write-word');
+    press(tree, 'pack-learn-practice-write');
     expect(textOf(tree, 'pack-learn-write-meaning')).toBe('cà phê');
     expect(has(tree, 'pack-learn-next-card')).toBe(false);
     for (const key of coffee.text.split('')) {
@@ -243,8 +243,8 @@ describe('PackLearnScreen "Nói từ"', () => {
     setPronunciationConsent('off');
     const tree = renderPack();
     await flush();
-    expect(has(tree, 'pack-learn-speak-word-locked')).toBe(true);
-    press(tree, 'pack-learn-speak-word');
+    expect(has(tree, 'pack-learn-practice-speak-locked')).toBe(true);
+    press(tree, 'pack-learn-practice-speak');
     expect(mockAppNavigation.openPronunciationSettings).toHaveBeenCalledTimes(
       1,
     );
@@ -252,7 +252,7 @@ describe('PackLearnScreen "Nói từ"', () => {
 
     // Turned on in Settings: the button unlocks without leaving the card.
     act(() => setPronunciationConsent('on'));
-    expect(has(tree, 'pack-learn-speak-word-locked')).toBe(false);
+    expect(has(tree, 'pack-learn-practice-speak-locked')).toBe(false);
   });
 
   it('opens the reading panel in place of the card, and goes back to it', async () => {
@@ -260,7 +260,7 @@ describe('PackLearnScreen "Nói từ"', () => {
     setPronunciationConsent('on');
     const tree = renderPack();
     await flush();
-    press(tree, 'pack-learn-speak-word');
+    press(tree, 'pack-learn-practice-speak');
     expect(has(tree, 'pack-learn-speak-panel')).toBe(true);
     expect(textOf(tree, 'pack-learn-speak-text')).toBe('coffee');
     expect(has(tree, 'pack-learn-next-card')).toBe(false);
@@ -274,6 +274,6 @@ describe('PackLearnScreen "Nói từ"', () => {
     setPronunciationConsent('on');
     const tree = renderPack();
     await flush();
-    expect(has(tree, 'pack-learn-speak-word')).toBe(false);
+    expect(has(tree, 'pack-learn-practice-speak')).toBe(false);
   });
 });

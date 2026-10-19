@@ -27,7 +27,12 @@ jest.mock('@features/audio', () =>
 const mockRequestSync = jest.fn();
 jest.mock('@features/sync', () => ({requestSync: () => mockRequestSync()}));
 
-jest.mock('@features/speaking', () => ({loadLessonRecorder: () => null}));
+jest.mock('@features/speaking', () => ({
+  loadLessonRecorder: () => null,
+  loadReadingRecorder: () => null,
+  isPronunciationConsentOn: () => false,
+  subscribePronunciationConsent: () => () => {},
+}));
 
 const snapshot = seedSnapshot();
 let mockState: {status: string; [key: string]: unknown};

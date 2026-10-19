@@ -332,7 +332,11 @@ export function LessonFlowPlayerScreen({navigation, route}: Props) {
               onPress: () => openStep((shownStep + 1) as FlowStep),
             }
           : null;
-  const footerAction = (!showMap && footer.action) || defaultAction;
+  // A practice panel on a card hides the bar: it has its own buttons.
+  const footerAction =
+    !showMap && footer.hidden
+      ? null
+      : (!showMap && footer.action) || defaultAction;
 
   return (
     <AppScreen>

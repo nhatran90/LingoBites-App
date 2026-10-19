@@ -45,16 +45,22 @@ export type FlowFooterAction = {
   };
 };
 
+/**
+ * What a registration asks for: an action, or `'hidden'` for no bottom bar
+ * at all (e.g. while a word card's practice panel has its own buttons).
+ */
+export type FlowFooterRequest = FlowFooterAction | 'hidden';
+
 type Registration = {
   owner: number;
   priority: number;
-  action: FlowFooterAction;
+  action: FlowFooterRequest;
 };
 
 type Register = (
   owner: number,
   priority: number,
-  action: FlowFooterAction | null,
+  action: FlowFooterRequest | null,
 ) => void;
 
 const FlowFooterContext = createContext<Register | null>(null);
@@ -63,12 +69,12 @@ let nextOwner = 1;
 
 /**
  * Lets a step's content take over the pinned bottom button (and show its
- * feedback there) while it is mounted. The highest priority wins; without a
- * host (a component rendered on its own) it returns false and the caller
- * shows its own inline button.
+ * feedback there) while it is mounted, or hide the bar (`'hidden'`). The
+ * highest priority wins; without a host (a component rendered on its own)
+ * it returns false and the caller shows its own inline button.
  */
 export function useFlowFooter(
-  action: FlowFooterAction | null,
+  action: FlowFooterRequest | null,
   priority: number,
 ): boolean {
   const register = useContext(FlowFooterContext);
@@ -81,40 +87,47 @@ export function useFlowFooter(
   latest.current = action;
   // Only what is shown re-registers; the press always reaches the newest
   // handler through the ref.
-  const shown = action
-    ? JSON.stringify([
-        action.title,
-        action.hint,
-        action.testID,
-        action.icon,
-        action.feedback,
-        action.disabled,
-        action.note,
-        action.secondary
-          ? [
-              action.secondary.title,
-              action.secondary.testID,
-              action.secondary.disabled,
-            ]
-          : null,
-      ])
-    : null;
+  const shown =
+    action === 'hidden'
+      ? 'hidden'
+      : action
+        ? JSON.stringify([
+            action.title,
+            action.hint,
+            action.testID,
+            action.icon,
+            action.feedback,
+            action.disabled,
+            action.note,
+            action.secondary
+              ? [
+                  action.secondary.title,
+                  action.secondary.testID,
+                  action.secondary.disabled,
+                ]
+              : null,
+          ])
+        : null;
 
   useEffect(() => {
     if (!register) return;
     const id = owner.current;
     const current = latest.current;
+    if (current === 'hidden') {
+      register(id, priority, 'hidden');
+      return () => register(id, priority, null);
+    }
     register(
       id,
       priority,
       shown && current
         ? {
             ...current,
-            onPress: () => latest.current?.onPress(),
+            onPress: () => latestAction()?.onPress(),
             secondary: current.secondary
               ? {
                   ...current.secondary,
-                  onPress: () => latest.current?.secondary?.onPress(),
+                  onPress: () => latestAction()?.secondary?.onPress(),
                 }
               : undefined,
           }
@@ -124,12 +137,21 @@ export function useFlowFooter(
   }, [register, priority, shown]);
 
   return register !== null;
+
+  function latestAction(): FlowFooterAction | null {
+    const value = latest.current;
+    return value === 'hidden' ? null : value;
+  }
 }
 
-/** State for the host: the action of the highest-priority registration. */
+/**
+ * State for the host: the action of the highest-priority registration, and
+ * whether that registration hides the bar instead.
+ */
 export function useFlowFooterHost(): {
   register: Register;
   action: FlowFooterAction | null;
+  hidden: boolean;
 } {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const register = useCallback<Register>((owner, priority, action) => {
@@ -138,14 +160,18 @@ export function useFlowFooterHost(): {
       return action ? [...rest, {owner, priority, action}] : rest;
     });
   }, []);
-  const action = useMemo(() => {
-    let best: Registration | null = null;
+  const best = useMemo(() => {
+    let found: Registration | null = null;
     for (const entry of registrations) {
-      if (!best || entry.priority >= best.priority) best = entry;
+      if (!found || entry.priority >= found.priority) found = entry;
     }
-    return best?.action ?? null;
+    return found?.action ?? null;
   }, [registrations]);
-  return {register, action};
+  return {
+    register,
+    action: best === 'hidden' ? null : best,
+    hidden: best === 'hidden',
+  };
 }
 
 export function FlowFooterProvider({

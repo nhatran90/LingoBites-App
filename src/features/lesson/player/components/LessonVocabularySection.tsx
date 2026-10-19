@@ -2,11 +2,15 @@ import React, {useMemo, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {StyleSheet, View} from 'react-native';
 
+import {
+  useWordPractice,
+  WordPracticeBar,
+  WordPracticeView,
+} from '@features/pronunciation';
+
 import {AppTabs} from '@ui/components/AppTabs';
 import {AppText} from '@ui/components/AppText';
 import {formatIpa} from '@ui/components/WordCard';
-import {canWriteWord, WriteWordButton} from '@ui/components/WriteWordButton';
-import {WriteWordPanel} from '@ui/components/WriteWordPanel';
 import {type AppTheme, useAppTheme} from '@ui/theme';
 
 import type {LessonSentence} from '@core/schemas/lesson';
@@ -30,8 +34,8 @@ export type LessonVocabularySectionProps = {
   entries: LessonVocabularyEntry[];
   /** The lesson's sentences, to show each word in context on the back. */
   sentences?: LessonSentence[];
-  /** Speaks a word (TTS); omitted = no play buttons. */
-  onSpeakText?: (text: string) => void;
+  /** Speaks a word (TTS), slowly with a rate; omitted = no play buttons. */
+  onSpeakText?: (text: string, rate?: number) => void;
   /** "Lưu thẻ" per word; omitted = no save buttons. */
   saveControl?: VocabularySaveControl;
   /** "Xong" after the last word; omitted = no button there. */
@@ -67,8 +71,29 @@ export function LessonVocabularySection({
   const grouped = entries.some(entry => entry.role !== null);
   const [role, setRole] = useState<LessonItemRole>('required');
   const [index, setIndex] = useState(0);
-  // "Viết từ": the card swaps for the writing panel (practice only).
-  const [writing, setWriting] = useState(false);
+  const group =
+    grouped && groups.length > 1
+      ? (groups.find(candidate => candidate.role === role) ?? groups[0]!)
+      : null;
+  const list = group ? group.entries : entries;
+  const total = list.length;
+  const at = Math.min(index, Math.max(total - 1, 0));
+  const current = list[at];
+  // "Viết từ" / "Đọc từ": the card swaps for the practice panel (practice
+  // only). Moving to another word closes it.
+  const wordPractice = useWordPractice(
+    current
+      ? {
+          key: `${group?.role ?? 'all'}:${current.key}`,
+          text: current.word,
+          meaningVi: current.meaning,
+          ipa: current.ipa ? formatIpa(current.ipa) : null,
+          kind: null,
+          itemId: current.itemId,
+        }
+      : null,
+    'lesson',
+  );
 
   if (entries.length === 0) {
     return (
@@ -80,17 +105,9 @@ export function LessonVocabularySection({
     );
   }
 
-  const group =
-    grouped && groups.length > 1
-      ? (groups.find(candidate => candidate.role === role) ?? groups[0]!)
-      : null;
-  const list = group ? group.entries : entries;
-  const total = list.length;
-  const at = Math.min(index, total - 1);
   const entry = list[at]!;
   const last = at >= total - 1;
   const goTo = (next: number) => {
-    setWriting(false);
     setIndex(Math.min(Math.max(next, 0), total - 1));
   };
 
@@ -129,7 +146,7 @@ export function LessonVocabularySection({
 
   return (
     <StudyPage
-      footer={footer}
+      footer={wordPractice.practising ? null : footer}
       pageKey={`${group?.role ?? 'all'}-${at}`}
       testID="lesson-vocabulary-section"
     >
@@ -139,7 +156,6 @@ export function LessonVocabularySection({
           onChange={next => {
             setRole(next);
             setIndex(0);
-            setWriting(false);
           }}
           tabs={groups.map(candidate => ({
             id: candidate.role,
@@ -157,14 +173,11 @@ export function LessonVocabularySection({
         testID="lesson-vocabulary-progress"
         total={total}
       />
-      {writing ? (
-        <WriteWordPanel
-          ipa={entry.ipa ? formatIpa(entry.ipa) : null}
-          key={entry.key}
-          meaningVi={entry.meaning}
-          onDone={() => setWriting(false)}
-          testID="lesson-vocabulary-write"
-          word={entry.word}
+      {wordPractice.practising ? (
+        <WordPracticeView
+          onSpeak={onSpeakText}
+          practice={wordPractice}
+          testID="lesson-vocabulary"
         />
       ) : (
         <>
@@ -184,13 +197,10 @@ export function LessonVocabularySection({
             testID="lesson-vocabulary-swipe"
             total={total}
           />
-          {canWriteWord(entry.word) ? (
-            <WriteWordButton
-              onPress={() => setWriting(true)}
-              testID="lesson-vocabulary-write-word"
-              text={entry.word}
-            />
-          ) : null}
+          <WordPracticeBar
+            practice={wordPractice}
+            testID="lesson-vocabulary-practice"
+          />
           <AppText color="muted" style={styles.hint}>
             {t('lessonPlayer.flashcard_swipe_hint')}
           </AppText>

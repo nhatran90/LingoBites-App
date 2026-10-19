@@ -4,10 +4,9 @@ import {ScrollView, StyleSheet, View} from 'react-native';
 
 import {useSpeak} from '@features/audio';
 import {
-  cardReadingTarget,
-  SpeakWordButton,
-  SpeakWordPanel,
-  useSpeakWordAccess,
+  useWordPractice,
+  WordPracticeBar,
+  WordPracticeView,
 } from '@features/pronunciation';
 
 import {ActionIconButton} from '@ui/components/ActionIconButton';
@@ -25,8 +24,6 @@ import {
   StudyQuestion,
 } from '@ui/components/StudySession';
 import {SwipeCard, type SwipeDirection} from '@ui/components/SwipeCard';
-import {canWriteWord, WriteWordButton} from '@ui/components/WriteWordButton';
-import {WriteWordPanel} from '@ui/components/WriteWordPanel';
 import {type AppTheme, useAppTheme} from '@ui/theme';
 import {getStickerEdge} from '@ui/theme/hardShadow';
 import {HERO_PALETTE} from '@ui/theme/heroPalette';
@@ -84,21 +81,23 @@ export function PackLearnScreen({navigation, route, items: given}: Props) {
   const [chosen, setChosen] = useState<number | null>(null);
   const [learned, setLearned] = useState<string[]>([]);
   const [failed, setFailed] = useState(false);
-  // "Viết từ": the current card swaps for the writing panel (practice only).
-  const [writing, setWriting] = useState(false);
-  // "Nói từ": the same for reading the card aloud for scoring.
-  const [speaking, setSpeaking] = useState(false);
-  const speakAccess = useSpeakWordAccess();
   const card = items[cardIndex];
-  const speakTarget = card
-    ? cardReadingTarget({
-        place: 'pack',
-        text: card.text,
-        itemId: card.id,
-        kind: card.kind,
-      })
-    : null;
-  const practising = writing || speaking;
+  // "Viết từ" / "Đọc từ": the current card swaps for the practice panel
+  // (practice only). Moving to another card closes it.
+  const wordPractice = useWordPractice(
+    card
+      ? {
+          key: card.code,
+          text: card.text,
+          meaningVi: card.meaning_vi,
+          ipa: card.ipa,
+          kind: card.kind,
+          itemId: card.id,
+        }
+      : null,
+    'pack',
+  );
+  const practising = wordPractice.practising;
   const question = questions[questionIndex];
 
   const save = async (codes: string[]) => {
@@ -147,8 +146,6 @@ export function PackLearnScreen({navigation, route, items: given}: Props) {
     ? topic.charAt(0).toUpperCase() + topic.slice(1)
     : null;
   const nextCard = () => {
-    setWriting(false);
-    setSpeaking(false);
     if (cardIndex + 1 < items.length) {
       setCardIndex(value => value + 1);
     } else {
@@ -156,8 +153,6 @@ export function PackLearnScreen({navigation, route, items: given}: Props) {
     }
   };
   const prevCard = () => {
-    setWriting(false);
-    setSpeaking(false);
     setCardIndex(value => Math.max(0, value - 1));
   };
   const onSwipe = (direction: SwipeDirection) =>
@@ -206,26 +201,11 @@ export function PackLearnScreen({navigation, route, items: given}: Props) {
           />
         ) : null}
 
-        {stage === 'cards' && card && writing ? (
-          <WriteWordPanel
-            ipa={card.ipa}
-            key={card.code}
-            meaningVi={card.meaning_vi}
-            onDone={() => setWriting(false)}
-            testID="pack-learn-write"
-            word={card.text}
-          />
-        ) : null}
-        {stage === 'cards' && card && speaking && speakTarget ? (
-          <SpeakWordPanel
-            ipa={card.ipa}
-            key={card.code}
-            meaningVi={card.meaning_vi}
-            onDone={() => setSpeaking(false)}
+        {stage === 'cards' && practising ? (
+          <WordPracticeView
             onSpeak={say}
-            target={speakTarget}
-            testID="pack-learn-speak"
-            text={card.text}
+            practice={wordPractice}
+            testID="pack-learn"
           />
         ) : null}
         {stage === 'cards' && card && !practising ? (
@@ -249,27 +229,10 @@ export function PackLearnScreen({navigation, route, items: given}: Props) {
             />
           </SwipeCard>
         ) : null}
-        {stage === 'cards' && card && !practising && canWriteWord(card.text) ? (
-          <WriteWordButton
-            onPress={() => setWriting(true)}
-            testID="pack-learn-write-word"
-            text={card.text}
-          />
-        ) : null}
-        {stage === 'cards' &&
-        card &&
-        !practising &&
-        speakTarget &&
-        speakAccess !== 'hidden' ? (
-          <SpeakWordButton
-            locked={speakAccess === 'locked'}
-            onPress={() =>
-              speakAccess === 'locked'
-                ? appNavigation.openPronunciationSettings()
-                : setSpeaking(true)
-            }
-            testID="pack-learn-speak-word"
-            text={card.text}
+        {stage === 'cards' ? (
+          <WordPracticeBar
+            practice={wordPractice}
+            testID="pack-learn-practice"
           />
         ) : null}
         {stage === 'cards' && card && !practising ? (

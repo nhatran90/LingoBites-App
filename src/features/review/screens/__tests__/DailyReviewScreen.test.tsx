@@ -152,9 +152,9 @@ describe('DailyReviewScreen', () => {
     await act(async () => {
       tree.root.findByProps({testID: 'review-write-done'}).props.onPress();
     });
-    expect(tree.root.findAllByProps({testID: 'review-practice-write'})).toHaveLength(
-      0,
-    );
+    expect(
+      tree.root.findAllByProps({testID: 'review-practice-write'}),
+    ).toHaveLength(0);
     await act(async () => {
       tree.root.findByProps({testID: 'rating-remembered'}).props.onPress();
     });

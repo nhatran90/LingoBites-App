@@ -6,10 +6,9 @@ import {SpeechNotice, useSpeak} from '@features/audio';
 import {listComboSentenceSetsFor} from '@features/combo';
 import {startReviewSession} from '@features/engagement';
 import {
-  cardReadingTarget,
-  SpeakWordButton,
-  SpeakWordPanel,
-  useSpeakWordAccess,
+  useWordPractice,
+  WordPracticeBar,
+  WordPracticeView,
 } from '@features/pronunciation';
 import {requestSync} from '@features/sync';
 
@@ -20,13 +19,10 @@ import {AppScreen} from '@ui/components/AppScreen';
 import {AppText} from '@ui/components/AppText';
 import {SessionHeader, StudyQuestion} from '@ui/components/StudySession';
 import {formatIpa} from '@ui/components/WordCard';
-import {canWriteWord, WriteWordButton} from '@ui/components/WriteWordButton';
-import {WriteWordPanel} from '@ui/components/WriteWordPanel';
 import {type AppTheme, useAppTheme} from '@ui/theme';
 
 import {createRequestId} from '@core/api/requestId';
 import {questionFor, type QuizQuestion} from '@core/learning/packQuiz';
-import {useAppNavigation} from '@core/navigation';
 import {lapsesOf} from '@core/sync/learningOutcomes';
 
 import {ApplyExerciseCard} from '../components/ApplyExerciseCard';
@@ -109,12 +105,6 @@ export function ItemReviewScreen({navigation, queue: given}: Props) {
   const items = practice ?? queue.items;
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
-  // "Viết từ": write the word before recalling (practice only).
-  const [writing, setWriting] = useState(false);
-  // "Nói từ": read the card aloud for scoring before recalling (practice only).
-  const [speaking, setSpeaking] = useState(false);
-  const speakAccess = useSpeakWordAccess();
-  const appNavigation = useAppNavigation();
   const [shownAt, setShownAt] = useState(() => Date.now());
   const [results, setResults] = useState<ItemReviewResult[]>([]);
   const [failed, setFailed] = useState(false);
@@ -143,18 +133,21 @@ export function ItemReviewScreen({navigation, queue: given}: Props) {
     );
   }, [current, index]);
   const recall = !recognition && exercise === null;
-  const speakTarget = current
-    ? cardReadingTarget({
-        place: 'review',
-        text: current.item.text,
-        itemId: current.item.id,
-        kind: current.item.kind,
-      })
-    : null;
-  const openSpeaking = () =>
-    speakAccess === 'ready'
-      ? setSpeaking(true)
-      : appNavigation.openPronunciationSettings();
+  // "Viết từ" / "Đọc từ" before recalling (practice only). The key changes
+  // with every card shown, so moving on closes the practice.
+  const wordPractice = useWordPractice(
+    current && recall
+      ? {
+          key: `${practice ? 'again' : 'due'}:${index}:${current.item.code}`,
+          text: current.item.text,
+          meaningVi: current.item.meaning_vi,
+          ipa: current.item.ipa ? formatIpa(current.item.ipa) : null,
+          kind: current.item.kind,
+          itemId: current.item.id,
+        }
+      : null,
+    'review',
+  );
 
   const finishSession = () => {
     const outcome = session.finish();
@@ -165,8 +158,6 @@ export function ItemReviewScreen({navigation, queue: given}: Props) {
     if (!practice && index + 1 >= items.length) finishSession();
     setIndex(value => value + 1);
     setRevealed(false);
-    setWriting(false);
-    setSpeaking(false);
     setChosen(null);
     setCompared(false);
     setShownAt(Date.now());
@@ -231,8 +222,6 @@ export function ItemReviewScreen({navigation, queue: given}: Props) {
     setXpEarned(null);
     setIndex(0);
     setRevealed(false);
-    setWriting(false);
-    setSpeaking(false);
     setChosen(null);
     setCompared(false);
     setShownAt(Date.now());
@@ -316,35 +305,15 @@ export function ItemReviewScreen({navigation, queue: given}: Props) {
             onResult={recordChecked}
           />
         ) : null}
-        {current && !showCompare && recall && writing ? (
-          <WriteWordPanel
-            ipa={current.item.ipa ? formatIpa(current.item.ipa) : null}
-            key={current.item.code}
-            meaningVi={current.item.meaning_vi}
-            onDone={() => {
-              setWriting(false);
-              setRevealed(true);
-            }}
-            testID="item-review-write"
-            word={current.item.text}
-          />
-        ) : null}
-        {current && !showCompare && recall && speaking && speakTarget ? (
-          <SpeakWordPanel
-            ipa={current.item.ipa ? formatIpa(current.item.ipa) : null}
-            key={current.item.code}
-            meaningVi={current.item.meaning_vi}
-            onDone={() => {
-              setSpeaking(false);
-              setRevealed(true);
-            }}
+        {current && !showCompare && recall && wordPractice.practising ? (
+          <WordPracticeView
+            onDone={() => setRevealed(true)}
             onSpeak={say}
-            target={speakTarget}
-            testID="item-review-speak"
-            text={current.item.text}
+            practice={wordPractice}
+            testID="item-review"
           />
         ) : null}
-        {current && !showCompare && recall && !writing && !speaking ? (
+        {current && !showCompare && recall && !wordPractice.practising ? (
           <AppCard testID={`item-review-card-${current.item.code}`}>
             <View style={themedStyles.row}>
               <Pressable
@@ -366,22 +335,10 @@ export function ItemReviewScreen({navigation, queue: given}: Props) {
                 onPress={() => say(current.item.text)}
               />
             </View>
-            {current.item.kind !== 'pattern' &&
-            canWriteWord(current.item.text) ? (
-              <WriteWordButton
-                onPress={() => setWriting(true)}
-                testID="item-review-write-word"
-                text={current.item.text}
-              />
-            ) : null}
-            {speakTarget && speakAccess !== 'hidden' ? (
-              <SpeakWordButton
-                locked={speakAccess === 'locked'}
-                onPress={openSpeaking}
-                testID="item-review-speak-word"
-                text={current.item.text}
-              />
-            ) : null}
+            <WordPracticeBar
+              practice={wordPractice}
+              testID="item-review-practice"
+            />
             {/* Same order and weight as the daily review's rating buttons:
                 not remembered on the left, remembered (the "yes") on the
                 thumb side, filled. */}

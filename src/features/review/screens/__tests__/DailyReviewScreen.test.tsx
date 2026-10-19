@@ -119,7 +119,7 @@ describe('DailyReviewScreen', () => {
     );
 
     await act(async () => {
-      tree.root.findByProps({testID: 'review-write-try'}).props.onPress();
+      tree.root.findByProps({testID: 'review-practice-write'}).props.onPress();
     });
     expect(
       tree.root.findByProps({testID: 'review-write-meaning'}).props.children,
@@ -127,6 +127,16 @@ describe('DailyReviewScreen', () => {
     expect(
       tree.root.findAllByProps({testID: 'review-swipe-card'}),
     ).toHaveLength(0);
+    // While writing, the card's own buttons are gone: only the panel's.
+    for (const testID of [
+      'rating-reveal',
+      'rating-remembered',
+      'rating-forgot',
+      'rating-skip',
+      'review-practice-write',
+    ]) {
+      expect(tree.root.findAllByProps({testID})).toHaveLength(0);
+    }
     const input = tree.root.find(
       node =>
         node.props.testID === 'review-write-input' &&
@@ -142,9 +152,9 @@ describe('DailyReviewScreen', () => {
     await act(async () => {
       tree.root.findByProps({testID: 'review-write-done'}).props.onPress();
     });
-    expect(tree.root.findAllByProps({testID: 'review-write-try'})).toHaveLength(
-      0,
-    );
+    expect(
+      tree.root.findAllByProps({testID: 'review-practice-write'}),
+    ).toHaveLength(0);
     await act(async () => {
       tree.root.findByProps({testID: 'rating-remembered'}).props.onPress();
     });

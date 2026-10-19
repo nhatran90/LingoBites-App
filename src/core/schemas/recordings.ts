@@ -67,7 +67,13 @@ export const CreatePronunciationRecordingRequestSchema = z
   .object({
     client_recording_id: z.string().guid(),
     mode: z.literal('pronunciation'),
-    source: z.enum(['lesson', 'pack', 'review_word', 'review_sentence']),
+    source: z.enum([
+      'lesson',
+      'pack',
+      'review_word',
+      'review_sentence',
+      'lesson_card',
+    ]),
     item_id: z.string().guid().optional(),
     reference_text: z.string().min(1).max(120).optional(),
     duration_ms: z.number().int().min(1).max(PRONUNCIATION_MAX_DURATION_MS),

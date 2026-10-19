@@ -286,8 +286,7 @@
     "remembered_hint": "schedule review later",
     "reveal_label": "Show meaning",
     "reveal_a11y": "Show meaning",
-    "reveal_hint": "Flip the card to see the meaning and rate it",
-    "reveal_tip": "Try to recall the meaning before you flip"
+    "reveal_hint": "Flip the card to see the meaning and rate it"
   },
   "common": {
     "retry": "Retry",
@@ -1908,6 +1907,14 @@
     "voice_missing": "This device has no English (US) voice, so it cannot read aloud. Install one in system settings.",
     "unavailable": "Audio playback is not available on this device."
   },
+  "listen": {
+    "normal": "Listen",
+    "normal_hint": "Reads it aloud with the model voice",
+    "slow": "Listen slowly",
+    "slow_hint": "Reads it more slowly so each sound is clear",
+    "slow_badge": "0.5×",
+    "slow_labelled": "0.5× Listen slowly"
+  },
   "patternTense": {
     "filter_all": "All",
     "filter_function": "What you want to say",
@@ -1986,7 +1993,6 @@
   },
   "writeWord": {
     "button": "Write the word",
-    "button_phrase": "Write the phrase",
     "button_hint": "Look at the Vietnamese meaning and build the word with the tile keyboard",
     "title": "Write this word in English",
     "title_phrase": "Write this phrase in English",
@@ -2002,9 +2008,9 @@
   },
   "speakWord": {
     "button": "Say the word",
-    "button_sentence": "Say the sentence",
     "button_hint": "Read it aloud and see each sound scored",
     "locked_notice": "“Machine pronunciation scoring” is off. Tap to open Settings and turn it on.",
+    "locked_short": "Turn on in Settings",
     "locked_hint": "Open Settings to turn on pronunciation scoring",
     "title": "Read this word aloud",
     "title_sentence": "Read this sentence aloud",

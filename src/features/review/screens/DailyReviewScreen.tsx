@@ -8,17 +8,16 @@ import {
   View,
 } from 'react-native';
 
-import {type SpeakText, SpeechNotice, useSpeak} from '@features/audio';
+import {SpeechNotice, useSpeak} from '@features/audio';
 import {
   reconcileReminders,
   type ReviewSession,
   startReviewSession,
 } from '@features/engagement';
 import {
-  cardReadingTarget,
-  SpeakWordButton,
-  SpeakWordPanel,
-  useSpeakWordAccess,
+  useWordPractice,
+  WordPracticeBar,
+  WordPracticeView,
 } from '@features/pronunciation';
 import {requestSync} from '@features/sync';
 
@@ -30,6 +29,7 @@ import {Banner} from '@ui/components/Banner';
 import {ErrorCard} from '@ui/components/ErrorCard';
 import {FlipCard} from '@ui/components/FlipCard';
 import {HeaderIconButton} from '@ui/components/HeaderIconButton';
+import {ListenButtons} from '@ui/components/ListenButtons';
 import {MaterialIcon} from '@ui/components/MaterialIcon';
 import {Medallion} from '@ui/components/Medallion';
 import {ProgressRing} from '@ui/components/ProgressRing';
@@ -37,13 +37,10 @@ import {RatingControl} from '@ui/components/RatingControl';
 import {ScreenHeader} from '@ui/components/ScreenHeader';
 import {SessionHeader} from '@ui/components/StudySession';
 import {SwipeCard, type SwipeDirection} from '@ui/components/SwipeCard';
-import {canWriteWord, WriteWordButton} from '@ui/components/WriteWordButton';
-import {WriteWordPanel} from '@ui/components/WriteWordPanel';
 import {useAppTheme} from '@ui/theme';
 
 import type {FlashcardRecord, ReviewRating} from '@core/db/types';
 import {renderFrameWithLabels} from '@core/learning';
-import {useAppNavigation} from '@core/navigation';
 import {useFeatureEnabled} from '@core/release';
 
 import {ReviewCardBack, ReviewCardFront} from '../components/ReviewCardFaces';
@@ -69,11 +66,9 @@ type Summary = {
 function FlashcardFace({
   card,
   side,
-  speak,
 }: {
   card: FlashcardRecord;
   side: 'front' | 'back';
-  speak: SpeakText;
 }) {
   const {t} = useTranslation();
 
@@ -98,21 +93,12 @@ function FlashcardFace({
     exampleTranslation: card.example ? card.exampleTranslation : null,
     kind: card.kind,
   };
-  const onSpeak = () => {
-    speak(pattern ? (card.example ?? word) : card.word);
-  };
+  // The listen button sits in the bottom row (`CardListenButton`).
   if (side === 'back') {
     return (
       <ReviewCardBack
         card={content}
         hint={t('review.swipe_hint')}
-        onSpeak={onSpeak}
-        speakAccessibilityLabel={
-          pattern
-            ? t('review.pattern_listen_a11y')
-            : t('review.listen_answer_a11y')
-        }
-        speakTestID="review-speak-back"
         testID="review-card-back"
       />
     );
@@ -127,9 +113,6 @@ function FlashcardFace({
       }
       patternLabel={t('review.pattern_chip')}
       patternPrompt={t('review.pattern_prompt')}
-      onSpeak={onSpeak}
-      speakAccessibilityLabel={t('review.listen_prompt_a11y')}
-      speakTestID="review-speak-front"
       testID="review-card-front"
     />
   );
@@ -153,12 +136,6 @@ export function DailyReviewScreen({
   const [sessionCards] = useState(() => getDueFlashcards({limit: softCap}));
   const [currentIndex, setCurrentIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
-  // "Viết thử": write the word before flipping (practice only).
-  const [writing, setWriting] = useState(false);
-  // "Nói từ": read the card aloud for scoring before flipping (practice only).
-  const [speaking, setSpeaking] = useState(false);
-  const speakAccess = useSpeakWordAccess();
-  const appNavigation = useAppNavigation();
   const [ratingError, setRatingError] = useState<string | null>(null);
   const [summary, setSummary] = useState<Summary>({
     reviewed: 0,
@@ -178,20 +155,25 @@ export function DailyReviewScreen({
   );
   const carryOverCount = Math.max(0, allDueCount - sessionCards.length);
   const activeCard = sessionCards[currentIndex] ?? null;
-  const speakTarget = activeCard
-    ? cardReadingTarget({
-        place: 'review',
-        text: activeCard.word,
-        itemId: activeCard.itemId ?? null,
-        kind: activeCard.kind ?? null,
-      })
-    : null;
+  // "Viết từ" / "Đọc từ" before flipping (practice only).
+  const practice = useWordPractice(
+    activeCard
+      ? {
+          key: activeCard.id,
+          text: activeCard.word,
+          meaningVi: activeCard.meaningVi,
+          ipa: activeCard.ipa,
+          kind: activeCard.kind ?? null,
+          itemId: activeCard.itemId ?? null,
+        }
+      : null,
+    'review',
+  );
 
   function finishNext(nextSummary: Summary) {
     setRatingError(null);
     setFlipped(false);
-    setWriting(false);
-    setSpeaking(false);
+    practice.close();
     if (currentIndex + 1 >= sessionCards.length) {
       setSummary(nextSummary);
       setComplete(true);
@@ -481,34 +463,13 @@ export function DailyReviewScreen({
         {ratingError ? <ErrorCard message={ratingError} /> : null}
         <SpeechNotice notice={speechNotice} />
         <View onLayout={handleStageLayout} style={styles.flex1}>
-          {activeCard && writing ? (
+          {activeCard && practice.practising ? (
             <ScrollView keyboardShouldPersistTaps="handled">
-              <WriteWordPanel
-                ipa={activeCard.ipa}
-                key={activeCard.id}
-                meaningVi={activeCard.meaningVi}
-                onDone={() => {
-                  setWriting(false);
-                  setFlipped(true);
-                }}
-                testID="review-write"
-                word={activeCard.word}
-              />
-            </ScrollView>
-          ) : activeCard && speaking && speakTarget ? (
-            <ScrollView>
-              <SpeakWordPanel
-                ipa={activeCard.ipa}
-                key={activeCard.id}
-                meaningVi={activeCard.meaningVi}
-                onDone={() => {
-                  setSpeaking(false);
-                  setFlipped(true);
-                }}
+              <WordPracticeView
+                onDone={() => setFlipped(true)}
                 onSpeak={speak}
-                target={speakTarget}
-                testID="review-speak"
-                text={activeCard.word}
+                practice={practice}
+                testID="review"
               />
             </ScrollView>
           ) : activeCard ? (
@@ -521,14 +482,10 @@ export function DailyReviewScreen({
               testID="review-swipe-card"
             >
               <FlipCard
-                back={
-                  <FlashcardFace card={activeCard} side="back" speak={speak} />
-                }
+                back={<FlashcardFace card={activeCard} side="back" />}
                 backHint={t('review.swipe_hint')}
                 flipped={flipped}
-                front={
-                  <FlashcardFace card={activeCard} side="front" speak={speak} />
-                }
+                front={<FlashcardFace card={activeCard} side="front" />}
                 bare
                 frontHint={t('review.show_answer_hint')}
                 height={cardHeight}
@@ -540,44 +497,60 @@ export function DailyReviewScreen({
         </View>
       </View>
 
-      <View style={[styles.actions, {paddingHorizontal: theme.gutter}]}>
-        {activeCard &&
-        !flipped &&
-        !writing &&
-        !speaking &&
-        activeCard.kind !== 'pattern' &&
-        canWriteWord(activeCard.word) ? (
-          <WriteWordButton
-            onPress={() => setWriting(true)}
-            testID="review-write-try"
-            text={activeCard.word}
-          />
-        ) : null}
-        {activeCard &&
-        !flipped &&
-        !writing &&
-        !speaking &&
-        speakTarget &&
-        speakAccess !== 'hidden' ? (
-          <SpeakWordButton
-            locked={speakAccess === 'locked'}
-            onPress={() =>
-              speakAccess === 'ready'
-                ? setSpeaking(true)
-                : appNavigation.openPronunciationSettings()
+      {/* A practice has its own buttons: the card's are hidden meanwhile. */}
+      {practice.practising ? null : (
+        <View style={[styles.actions, {paddingHorizontal: theme.gutter}]}>
+          {flipped ? null : (
+            <WordPracticeBar practice={practice} testID="review-practice" />
+          )}
+          <RatingControl
+            disabled={!flipped}
+            leading={
+              activeCard ? (
+                <CardListenButton
+                  card={activeCard}
+                  flipped={flipped}
+                  speak={speak}
+                />
+              ) : null
             }
-            testID="review-speak-try"
-            text={activeCard.word}
+            onRate={handleRate}
+            onReveal={() => setFlipped(true)}
+            onSkip={handleSkip}
           />
-        ) : null}
-        <RatingControl
-          disabled={!flipped}
-          onRate={handleRate}
-          onReveal={() => setFlipped(true)}
-          onSkip={handleSkip}
-        />
-      </View>
+        </View>
+      )}
     </AppScreen>
+  );
+}
+
+/**
+ * The card's listen button, first in the bottom row. A pattern card's front
+ * has none: hearing the sentence would give the answer away; its back reads
+ * the example sentence.
+ */
+function CardListenButton({
+  card,
+  flipped,
+  speak,
+}: {
+  card: FlashcardRecord;
+  flipped: boolean;
+  speak: (text: string) => void;
+}) {
+  const pattern = card.kind === 'pattern';
+  if (pattern && !flipped) return null;
+  return (
+    <ListenButtons
+      onListen={() => {
+        speak(
+          pattern
+            ? (card.example ?? renderFrameWithLabels(card.word))
+            : card.word,
+        );
+      }}
+      testID={flipped ? 'review-speak-back' : 'review-speak-front'}
+    />
   );
 }
 
@@ -611,8 +584,12 @@ function SummaryStat({
 }
 
 const styles = StyleSheet.create({
+  // As tall before the flip as after it (the rating row and "Bỏ qua"), so
+  // the card above, which fills the stage, never resizes on flip.
   actions: {
     gap: 12,
+    justifyContent: 'flex-end',
+    minHeight: 160,
     paddingBottom: 12,
     paddingTop: 8,
   },

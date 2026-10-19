@@ -1,12 +1,13 @@
 /**
  * What a reading is scored against, and where it was made. The lesson's
- * pronunciation section reads a pronunciation item; pack and review cards
- * read their word, phrase or pattern item, or, for a saved word without
- * one, its own text. Each place has its own daily limit on the Server.
+ * pronunciation section reads a pronunciation item; pack, review and lesson
+ * word cards read their word, phrase or pattern item, or, for a word
+ * without one, its own text. Each place has its own daily limit on the
+ * Server.
  */
 
 export type ReadingSource =
-  'lesson' | 'pack' | 'review_word' | 'review_sentence';
+  'lesson' | 'pack' | 'review_word' | 'review_sentence' | 'lesson_card';
 
 export type ReadingTarget =
   | {source: ReadingSource; itemId: string}
@@ -37,11 +38,12 @@ export function isSentence(text: string): boolean {
 }
 
 /**
- * The target of a pack or review card, or null when it cannot be read
- * aloud for scoring. Phrases and patterns count under the sentence review.
+ * The target of a pack, review or lesson word card, or null when it cannot
+ * be read aloud for scoring. In the review, phrases and patterns count
+ * under the sentence review.
  */
 export function cardReadingTarget(card: {
-  place: 'pack' | 'review';
+  place: 'pack' | 'review' | 'lesson';
   text: string;
   itemId: string | null;
   kind: string | null;
@@ -50,9 +52,11 @@ export function cardReadingTarget(card: {
   const source: ReadingSource =
     card.place === 'pack'
       ? 'pack'
-      : card.kind === 'phrase' || card.kind === 'pattern'
-        ? 'review_sentence'
-        : 'review_word';
+      : card.place === 'lesson'
+        ? 'lesson_card'
+        : card.kind === 'phrase' || card.kind === 'pattern'
+          ? 'review_sentence'
+          : 'review_word';
   return card.itemId && GUID.test(card.itemId)
     ? {source, itemId: card.itemId}
     : {source, referenceText: card.text.trim()};

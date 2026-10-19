@@ -3,11 +3,15 @@ import {useTranslation} from 'react-i18next';
 import {StyleSheet, View} from 'react-native';
 
 import {useScreenSpeak} from '@features/audio';
+import {
+  useWordPractice,
+  WordPracticeBar,
+  WordPracticeView,
+} from '@features/pronunciation';
 
 import {AppText} from '@ui/components/AppText';
+import {SLOW_TTS_RATE} from '@ui/components/ListenButtons';
 import {formatIpa} from '@ui/components/WordCard';
-import {canWriteWord, WriteWordButton} from '@ui/components/WriteWordButton';
-import {WriteWordPanel} from '@ui/components/WriteWordPanel';
 import {type AppTheme, useAppTheme} from '@ui/theme';
 
 import {
@@ -29,8 +33,7 @@ import {
   useFlowFooter,
 } from './FlowFooter';
 
-/** Text-to-speech rate of "Nghe chậm" (the default rate is 0.5). */
-export const SLOW_TTS_RATE = 0.3;
+export {SLOW_TTS_RATE};
 
 export type ListenCardDeckProps = {
   block: LessonBlock;
@@ -58,14 +61,28 @@ export function ListenCardDeck({block, items, onDone}: ListenCardDeckProps) {
     [block, items],
   );
   const [index, setIndex] = useState(0);
-  // "Viết từ": the card swaps for the writing panel (practice only).
-  const [writing, setWriting] = useState(false);
+  const speak = useScreenSpeak();
   const total = cards.length;
   const last = index + 1 >= total;
   const goTo = (next: number) => {
-    setWriting(false);
     setIndex(Math.min(Math.max(next, 0), total - 1));
   };
+  const current = cards[index];
+  // "Viết từ" / "Đọc từ": the card swaps for the practice panel (practice
+  // only); the step's buttons wait until it closes.
+  const wordPractice = useWordPractice(
+    current
+      ? {
+          key: current.id,
+          text: current.item.text,
+          meaningVi: current.item.meaning_vi,
+          ipa: current.item.ipa ? formatIpa(current.item.ipa) : null,
+          kind: current.item.kind,
+          itemId: current.item.id,
+        }
+      : null,
+    'lesson',
+  );
 
   const previous =
     total > 1
@@ -94,7 +111,7 @@ export function ListenCardDeck({block, items, onDone}: ListenCardDeckProps) {
           secondary: previous,
         }
       : null;
-  const hosted = useFlowFooter(action, 1);
+  const hosted = useFlowFooter(wordPractice.practising ? 'hidden' : action, 1);
 
   const card = cards[index];
   if (!card) return null;
@@ -117,14 +134,11 @@ export function ListenCardDeck({block, items, onDone}: ListenCardDeckProps) {
           total={total}
         />
       ) : null}
-      {writing ? (
-        <WriteWordPanel
-          ipa={card.item.ipa ? formatIpa(card.item.ipa) : null}
-          key={card.id}
-          meaningVi={card.item.meaning_vi}
-          onDone={() => setWriting(false)}
-          testID="lesson-flow-card-write"
-          word={card.item.text}
+      {wordPractice.practising ? (
+        <WordPracticeView
+          onSpeak={speak}
+          practice={wordPractice}
+          testID="lesson-flow-card"
         />
       ) : (
         <>
@@ -138,19 +152,18 @@ export function ListenCardDeck({block, items, onDone}: ListenCardDeckProps) {
             testID="lesson-flow-card-swipe"
             total={total}
           />
-          {card.item.kind !== 'pattern' && canWriteWord(card.item.text) ? (
-            <WriteWordButton
-              onPress={() => setWriting(true)}
-              testID="lesson-flow-card-write-word"
-              text={card.item.text}
-            />
-          ) : null}
+          <WordPracticeBar
+            practice={wordPractice}
+            testID="lesson-flow-card-practice"
+          />
           <AppText color="muted" style={themedStyles.hint}>
             {t('lessonFlow.card_swipe_hint')}
           </AppText>
         </>
       )}
-      {action && !hosted ? <FlowFooterBar action={action} /> : null}
+      {action && !hosted && !wordPractice.practising ? (
+        <FlowFooterBar action={action} />
+      ) : null}
     </View>
   );
 }
@@ -184,7 +197,7 @@ function ListenCard({id, item}: {id: string; item: CatalogItem}) {
         <SpeakSquare
           accessibilityHint={t('lessonFlow.listen_slow_hint')}
           accessibilityLabel={t('lessonFlow.listen_slow')}
-          icon="timer"
+          label={t('listen.slow_badge')}
           onPress={() => {
             speak(item.text, SLOW_TTS_RATE);
           }}

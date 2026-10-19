@@ -4,6 +4,7 @@ import {ActivityIndicator, Pressable, StyleSheet, View} from 'react-native';
 
 import {AppButton} from '@ui/components/AppButton';
 import {AppText} from '@ui/components/AppText';
+import {ListenButtons, SLOW_TTS_RATE} from '@ui/components/ListenButtons';
 import {MaterialIcon} from '@ui/components/MaterialIcon';
 import {type AppTheme, useAppTheme} from '@ui/theme';
 import {getStickerEdge} from '@ui/theme/hardShadow';
@@ -20,9 +21,6 @@ import {
 import {PronunciationConsentPrompt} from './PronunciationConsentPrompt';
 import {SpeakResult} from './SpeakResult';
 
-/** Slow reading of a word, as the lesson's "listen slowly". */
-const SLOW_RATE = 0.3;
-
 export type SpeakWordPanelProps = {
   /** The card's word or sentence, read aloud and scored. */
   text: string;
@@ -31,6 +29,8 @@ export type SpeakWordPanelProps = {
   target: ReadingTarget;
   /** Back to the card (the take on the device is deleted). */
   onDone: () => void;
+  /** Label of the button that closes after a reading; "Xem lại thẻ". */
+  doneLabel?: string;
   /** Reads text aloud (the screen's TTS); omitted = no listen buttons. */
   onSpeak?: (text: string, rate?: number) => void;
   /** Prefix of the panel's testIDs. */
@@ -51,6 +51,7 @@ export function SpeakWordPanel({
   meaningVi = null,
   target,
   onDone,
+  doneLabel,
   onSpeak,
   testID = 'speak-word',
   deps,
@@ -72,7 +73,7 @@ export function SpeakWordPanel({
           <SpeakResult
             attempt={state.attempt}
             onListenSlow={
-              onSpeak ? word => onSpeak(word, SLOW_RATE) : undefined
+              onSpeak ? word => onSpeak(word, SLOW_TTS_RATE) : undefined
             }
           />
         ) : (
@@ -88,14 +89,12 @@ export function SpeakWordPanel({
                 {[ipa, meaningVi].filter(Boolean).join(' · ')}
               </AppText>
             ) : null}
-            {listenModel ? (
-              <AppButton
-                accessibilityHint={t('pronunciation.listen_model_hint')}
-                iconLeft="volume_up"
-                onPress={listenModel}
+            {onSpeak ? (
+              <ListenButtons
+                onListen={() => onSpeak(text)}
+                onListenSlow={() => onSpeak(text, SLOW_TTS_RATE)}
+                size="row"
                 testID={`${testID}-listen`}
-                title={t('pronunciation.listen_model')}
-                variant="outline"
               />
             ) : null}
           </View>
@@ -103,6 +102,7 @@ export function SpeakWordPanel({
       </View>
 
       <Body
+        doneLabel={doneLabel}
         elapsed={elapsed}
         listenModel={listenModel}
         onDone={onDone}
@@ -121,9 +121,11 @@ function Body({
   elapsed,
   listenModel,
   onDone,
+  doneLabel,
   styles,
   testID,
 }: {
+  doneLabel?: string;
   practice: PronunciationPractice;
   sentence: boolean;
   elapsed: number;
@@ -162,6 +164,7 @@ function Body({
           <AppButton
             accessibilityHint={t('pronunciation.declined_agree')}
             onPress={() => practice.answerConsent(true)}
+            testID={`${testID}-declined-agree`}
             title={t('pronunciation.declined_agree')}
             variant="outline"
           />
@@ -256,6 +259,7 @@ function Body({
     case 'scored':
       return (
         <AfterActions
+          doneLabel={doneLabel}
           listenModel={listenModel}
           onDone={onDone}
           practice={practice}
@@ -268,6 +272,7 @@ function Body({
         <View style={styles.block} testID={`${testID}-unscorable`}>
           <AppText>{t(unscorableKey(state.reason))}</AppText>
           <AfterActions
+            doneLabel={doneLabel}
             listenModel={listenModel}
             onDone={onDone}
             practice={practice}
@@ -296,6 +301,7 @@ function Body({
               accessibilityHint={t('pronunciation.check_again_hint')}
               iconLeft="refresh"
               onPress={practice.checkAgain}
+              testID={`${testID}-check-again`}
               title={t('pronunciation.check_again')}
             />
           ) : null}
@@ -303,6 +309,7 @@ function Body({
             cancel
           ) : (
             <AfterActions
+              doneLabel={doneLabel}
               listenModel={listenModel}
               onDone={onDone}
               practice={practice}
@@ -320,9 +327,11 @@ function AfterActions({
   practice,
   listenModel,
   onDone,
+  doneLabel,
   styles,
   testID,
 }: {
+  doneLabel?: string;
   practice: PronunciationPractice;
   listenModel?: () => void;
   onDone: () => void;
@@ -370,7 +379,7 @@ function AfterActions({
         accessibilityHint={t('speakWord.done_hint')}
         onPress={onDone}
         testID={`${testID}-done`}
-        title={t('speakWord.done')}
+        title={doneLabel ?? t('speakWord.done')}
         variant="secondary"
       />
     </View>

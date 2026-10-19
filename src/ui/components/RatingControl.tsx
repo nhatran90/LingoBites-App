@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {type ReactNode} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Pressable, StyleSheet, View} from 'react-native';
 
@@ -19,6 +19,11 @@ type Props = {
    * button replaces the inactive rating buttons.
    */
   onReveal?: () => void;
+  /**
+   * Shown first in the bottom row, beside "Xem nghĩa" or "Bỏ qua": the
+   * card's listen buttons, within the thumb's reach.
+   */
+  leading?: ReactNode;
 };
 
 type RatingOption = {
@@ -88,6 +93,7 @@ export function RatingControl({
   onSkip,
   disabled = false,
   onReveal,
+  leading,
 }: Props) {
   const {theme} = useAppTheme();
   const {t} = useTranslation();
@@ -96,7 +102,8 @@ export function RatingControl({
     const revealEdge =
       theme.shelf?.primary.color ?? theme.colors.primaryPressed;
     return (
-      <View style={styles.container}>
+      <View style={styles.bottomRow}>
+        {leading}
         <Pressable
           accessibilityHint={t('rating.reveal_hint')}
           accessibilityLabel={t('rating.reveal_a11y')}
@@ -122,16 +129,10 @@ export function RatingControl({
             {t('rating.reveal_label')}
           </AppText>
         </Pressable>
-        {/* Same footprint as the skip row, so the card above never resizes
-            when the rating buttons replace the reveal action. */}
-        <View style={styles.skipButton}>
-          <AppText color="muted" variant="caption">
-            {t('rating.reveal_tip')}
-          </AppText>
-        </View>
       </View>
     );
   }
+  const skipEdge = theme.shelf?.secondary.color ?? theme.colors.outlineVariant;
 
   return (
     <View style={styles.container}>
@@ -165,31 +166,36 @@ export function RatingControl({
         );
       })}
 
-      <Pressable
-        accessibilityLabel={t('rating.skip_a11y')}
-        accessibilityRole="button"
-        accessibilityState={{disabled}}
-        disabled={disabled}
-        hitSlop={8}
-        onPress={onSkip}
-        style={[
-          styles.skipButton,
-          // SETE-254: readable-disabled treatment (muted fill, no opacity wash).
-          disabled
-            ? {backgroundColor: theme.colors.surfaceMuted, borderRadius: 14}
-            : null,
-        ]}
-        testID="rating-skip"
-      >
-        <AppText color="secondary" variant="label">
-          {t('rating.skip_label')}
-        </AppText>
-        <MaterialIcon
-          color={theme.colors.text.secondary}
-          name="chevron_right"
-          size={18}
-        />
-      </Pressable>
+      <View style={styles.bottomRow}>
+        {leading}
+        <Pressable
+          accessibilityLabel={t('rating.skip_a11y')}
+          accessibilityRole="button"
+          accessibilityState={{disabled}}
+          disabled={disabled}
+          onPress={onSkip}
+          style={[
+            styles.skipButton,
+            {
+              // SETE-254: readable-disabled treatment (muted fill, no opacity wash).
+              backgroundColor: disabled
+                ? theme.colors.surfaceMuted
+                : theme.colors.surface,
+            },
+            getStickerEdge(5, skipEdge),
+          ]}
+          testID="rating-skip"
+        >
+          <AppText color="secondary" variant="label">
+            {t('rating.skip_label')}
+          </AppText>
+          <MaterialIcon
+            color={theme.colors.text.secondary}
+            name="chevron_right"
+            size={18}
+          />
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -217,16 +223,21 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
   },
-  // Sticker pill like StickerButton. 56 + 2 x 8 margin keeps the 72pt row
-  // of the rating buttons, so the card above never resizes on flip.
+  // The listen buttons, then the row's pill.
+  bottomRow: {
+    alignItems: 'center',
+    flexBasis: '100%',
+    flexDirection: 'row',
+    gap: 12,
+  },
+  // Sticker pill like StickerButton.
   revealButton: {
     alignItems: 'center',
     borderRadius: 999,
-    flexBasis: '100%',
+    flex: 1,
     flexDirection: 'row',
     gap: 8,
     justifyContent: 'center',
-    marginVertical: 8,
     minHeight: 56,
     paddingHorizontal: 16,
   },
@@ -236,10 +247,11 @@ const styles = StyleSheet.create({
   },
   skipButton: {
     alignItems: 'center',
-    flexBasis: '100%',
+    borderRadius: 999,
+    flex: 1,
     flexDirection: 'row',
     gap: 2,
     justifyContent: 'center',
-    minHeight: 44,
+    minHeight: 52,
   },
 });

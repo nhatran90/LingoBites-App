@@ -36,6 +36,25 @@ describe('cardReadingTarget', () => {
     ).toEqual({source: 'pack', itemId: ITEM_ID});
   });
 
+  it("reads a lesson's word card under its own source", () => {
+    expect(
+      cardReadingTarget({
+        place: 'lesson',
+        text: 'orange juice',
+        itemId: ITEM_ID,
+        kind: 'phrase',
+      }),
+    ).toEqual({source: 'lesson_card', itemId: ITEM_ID});
+    expect(
+      cardReadingTarget({
+        place: 'lesson',
+        text: 'window seat',
+        itemId: null,
+        kind: null,
+      }),
+    ).toEqual({source: 'lesson_card', referenceText: 'window seat'});
+  });
+
   it('counts phrases and patterns under the sentence review', () => {
     expect(
       cardReadingTarget({

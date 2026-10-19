@@ -355,20 +355,17 @@ export function CanonicalLessonHub({
       />
 
       <View style={styles.exploreSection}>
-        {exploreRows.length > 0 ||
-        canPractice ||
-        replay ||
-        onOpenCompose ? (
+        {exploreRows.length > 0 || canPractice || replay || onOpenCompose ? (
           <SectionHeader title={t('lessonPlayer.explore_title')} />
         ) : null}
         {exploreRows.map(row => (
-            <ExploreRow
-              key={row.section}
-              catalogLesson={catalogLesson}
-              onOpenSection={onOpenSection}
-              row={row}
-            />
-          ))}
+          <ExploreRow
+            key={row.section}
+            catalogLesson={catalogLesson}
+            onOpenSection={onOpenSection}
+            row={row}
+          />
+        ))}
         {canPractice ? (
           <LessonExploreRow
             icon="bolt"

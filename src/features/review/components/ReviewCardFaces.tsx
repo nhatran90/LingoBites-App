@@ -32,9 +32,10 @@ type FaceProps = {
   /** Pattern cards: kind chip and what to do on the front. */
   patternLabel?: string;
   patternPrompt?: string;
-  onSpeak: () => void;
-  speakAccessibilityLabel: string;
-  speakTestID: string;
+  /** The card's speak button; omitted when the screen has its own. */
+  onSpeak?: () => void;
+  speakAccessibilityLabel?: string;
+  speakTestID?: string;
   testID: string;
 };
 
@@ -127,15 +128,17 @@ export function ReviewCardFront({
               </AppText>
             </View>
           ) : null}
-          <ActionIconButton
-            accessibilityLabel={speakAccessibilityLabel}
-            icon="volume_up"
-            onPress={onSpeak}
-            onTint
-            size="large"
-            style={styles.speak}
-            testID={speakTestID}
-          />
+          {onSpeak ? (
+            <ActionIconButton
+              accessibilityLabel={speakAccessibilityLabel ?? ''}
+              icon="volume_up"
+              onPress={onSpeak}
+              onTint
+              size="large"
+              style={styles.speak}
+              testID={speakTestID}
+            />
+          ) : null}
         </View>
         <View style={styles.hintRow}>
           <MaterialIcon color={PALETTE.tealInk} name="refresh" size={16} />
@@ -186,13 +189,15 @@ export function ReviewCardBack({
               </AppText>
             ) : null}
           </View>
-          <ActionIconButton
-            accessibilityLabel={speakAccessibilityLabel}
-            icon="volume_up"
-            onPress={onSpeak}
-            onTint
-            testID={speakTestID}
-          />
+          {onSpeak ? (
+            <ActionIconButton
+              accessibilityLabel={speakAccessibilityLabel ?? ''}
+              icon="volume_up"
+              onPress={onSpeak}
+              onTint
+              testID={speakTestID}
+            />
+          ) : null}
         </View>
         <View style={themedStyles.backBody}>
           <AppText style={themedStyles.label}>{t('packLearn.meaning')}</AppText>

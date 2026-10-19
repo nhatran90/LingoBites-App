@@ -90,8 +90,8 @@ export function ListenWriteEntry({
               />
               <SoftButton
                 accessibilityHint={t('lessonFlow.listen_slow_hint')}
-                icon="timer"
-                label={t('lessonFlow.listen_slow')}
+                icon="volume_up"
+                label={t('listen.slow_labelled')}
                 onPress={() => {
                   speak(model, SLOW_TTS_RATE);
                 }}

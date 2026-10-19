@@ -84,6 +84,22 @@ describe('ListenCardDeck (step 2)', () => {
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
+  it('hides the deck buttons while "Viết từ" is open', () => {
+    const tree = renderWithTheme(
+      <ListenCardDeck block={block} items={items} />,
+    );
+    // The first card is a pattern: it offers no "Viết từ".
+    expect(has(tree, 'lesson-flow-card-practice-write')).toBe(false);
+    press(tree, 'lesson-flow-card-next');
+    press(tree, 'lesson-flow-card-practice-write');
+    expect(has(tree, 'lesson-flow-card-write-panel')).toBe(true);
+    expect(has(tree, 'lesson-flow-card-next')).toBe(false);
+    expect(has(tree, 'lesson-flow-card-practice')).toBe(false);
+    press(tree, 'lesson-flow-card-write-cancel');
+    expect(has(tree, 'lesson-flow-card-write-panel')).toBe(false);
+    expect(has(tree, 'lesson-flow-card-next')).toBe(true);
+  });
+
   it('speaks a word at normal and slow speed', () => {
     const tree = renderWithTheme(
       <ListenCardDeck block={block} items={items} />,

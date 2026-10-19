@@ -168,8 +168,11 @@ describe('PronunciationPracticeSheet', () => {
     const tree = await render();
     expect(text(tree)).toContain('The ship is big');
     expect(text(tree)).toContain('/ðə ʃɪp ɪz bɪɡ/');
-    await press(tree, 'pronunciation-listen-model');
+    await press(tree, 'pronunciation-listen');
     expect(onSpeak).toHaveBeenCalledWith('The ship is big');
+    // The same "0.5×" slow reading as on word cards.
+    await press(tree, 'pronunciation-listen-slow');
+    expect(onSpeak).toHaveBeenLastCalledWith('The ship is big', 0.3);
   });
 
   it('asks for the consent naming Microsoft Azure; "later" leaves only listening', async () => {
@@ -188,32 +191,29 @@ describe('PronunciationPracticeSheet', () => {
     expect(find(tree, 'pronunciation-record').length).toBeGreaterThan(0);
   });
 
-  it('records, scores and shows each word by band', async () => {
+  it('records, scores and shows each word by band, as "Đọc từ" does', async () => {
     const tree = await render();
     await press(tree, 'pronunciation-record');
-    expect(find(tree, 'pronunciation-record-stop').length).toBeGreaterThan(0);
-    await press(tree, 'pronunciation-record-stop');
+    expect(find(tree, 'pronunciation-stop').length).toBeGreaterThan(0);
+    await press(tree, 'pronunciation-stop');
     expect(find(tree, 'pronunciation-scoring').length).toBeGreaterThan(0);
     await advance(800);
 
-    expect(find(tree, 'pronunciation-result').length).toBeGreaterThan(0);
+    expect(find(tree, 'speak-result').length).toBeGreaterThan(0);
     expect(text(tree)).toContain('74');
-    expect(find(tree, 'pronunciation-word-0-good').length).toBeGreaterThan(0);
-    expect(find(tree, 'pronunciation-word-1-poor').length).toBeGreaterThan(0);
-    expect(find(tree, 'pronunciation-word-2-fair').length).toBeGreaterThan(0);
-    expect(find(tree, 'pronunciation-word-3-omitted').length).toBeGreaterThan(
-      0,
-    );
+    expect(find(tree, 'speak-word-0-good').length).toBeGreaterThan(0);
+    expect(find(tree, 'speak-word-1-poor').length).toBeGreaterThan(0);
+    expect(find(tree, 'speak-word-2-fair').length).toBeGreaterThan(0);
+    expect(find(tree, 'speak-word-3-omitted').length).toBeGreaterThan(0);
     // The added word is counted, never shown as a word.
-    expect(find(tree, 'pronunciation-word-4-poor')).toHaveLength(0);
-    expect(text(tree)).toContain('Bạn đọc thêm');
+    expect(find(tree, 'speak-word-4-poor')).toHaveLength(0);
+    expect(find(tree, 'speak-result-added').length).toBeGreaterThan(0);
 
-    // Tapping a word lists its sounds.
-    expect(find(tree, 'pronunciation-sounds')).toHaveLength(0);
-    await press(tree, 'pronunciation-word-1');
-    expect(find(tree, 'pronunciation-sound-0-good').length).toBeGreaterThan(0);
-    expect(find(tree, 'pronunciation-sound-1-poor').length).toBeGreaterThan(0);
-    expect(find(tree, 'pronunciation-sound-2-fair').length).toBeGreaterThan(0);
+    // A word lists its sounds.
+    await press(tree, 'speak-word-1-poor');
+    expect(find(tree, 'speak-sound-0-good').length).toBeGreaterThan(0);
+    expect(find(tree, 'speak-sound-1-poor').length).toBeGreaterThan(0);
+    expect(find(tree, 'speak-sound-2-fair').length).toBeGreaterThan(0);
 
     await press(tree, 'pronunciation-play-own');
     expect(recorder.playRecording).toHaveBeenCalledWith('/recordings/take.m4a');
@@ -238,7 +238,7 @@ describe('PronunciationPracticeSheet', () => {
     });
     const tree = await render();
     await press(tree, 'pronunciation-record');
-    await press(tree, 'pronunciation-record-stop');
+    await press(tree, 'pronunciation-stop');
     await advance(800);
     expect(text(tree)).toContain('hết lượt chấm');
     expect(find(tree, 'pronunciation-retry').length).toBeGreaterThan(0);
@@ -248,7 +248,7 @@ describe('PronunciationPracticeSheet', () => {
     fetchReading.mockResolvedValue({status: 'pending'});
     const tree = await render();
     await press(tree, 'pronunciation-record');
-    await press(tree, 'pronunciation-record-stop');
+    await press(tree, 'pronunciation-stop');
     await advance(33_000);
     expect(find(tree, 'pronunciation-error-slow').length).toBeGreaterThan(0);
 
@@ -268,7 +268,7 @@ describe('PronunciationPracticeSheet', () => {
       tree = ReactTestRenderer.create(sheet(ITEM, onClose));
     });
     await press(tree, 'pronunciation-record');
-    await press(tree, 'pronunciation-record-stop');
+    await press(tree, 'pronunciation-stop');
     await advance(800);
 
     await press(tree, 'pronunciation-sheet-close');

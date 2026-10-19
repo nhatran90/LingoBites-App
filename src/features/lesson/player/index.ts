@@ -12,8 +12,10 @@ export {ComposeTrackerHost} from './components/ComposeTrackerHost';
 export {
   dismissCompose,
   type ComposeEntry,
+  markComposeSeen,
   requestComposeSheet,
   resumeTrackedMoment,
+  setFocusedCompose,
   trackMoment,
   useComposeTracker,
 } from './logic/composeTracker';

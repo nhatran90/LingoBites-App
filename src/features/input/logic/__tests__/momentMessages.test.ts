@@ -1,4 +1,8 @@
-import {momentFailureMessage} from '../momentMessages';
+import {
+  momentFailureCopy,
+  momentFailureKind,
+  momentFailureMessage,
+} from '../momentMessages';
 
 const t = (key: string, options?: Record<string, unknown>) =>
   options ? `${key}:${JSON.stringify(options)}` : key;
@@ -20,5 +24,33 @@ describe('momentFailureMessage', () => {
       'moment.unavailable',
     );
     expect(momentFailureMessage('HTTP_500', t)).toBe('moment.generic_failed');
+  });
+});
+
+describe('momentFailureKind', () => {
+  it('groups server codes by what the learner can do next', () => {
+    expect(momentFailureKind('MOMENT_AUTHOR_FAILED')).toBe('system');
+    expect(momentFailureKind('CREATION_ATTEMPTS_EXHAUSTED')).toBe('system');
+    expect(momentFailureKind('COMPOSE_PROVIDER_FAILED')).toBe('system');
+    expect(momentFailureKind(undefined)).toBe('system');
+    expect(momentFailureKind('MOMENT_NOT_SUITABLE')).toBe('not_suitable');
+    expect(momentFailureKind('COMPOSE_BUDGET_EXHAUSTED')).toBe('paused');
+    expect(momentFailureKind('MOMENT_DISABLED')).toBe('paused');
+    expect(momentFailureKind('COMPOSE_LIMIT_REACHED')).toBe('limit');
+    expect(momentFailureKind('MOMENT_EXPIRED')).toBe('cancelled');
+    expect(momentFailureKind('SITUATION_NOT_FOUND')).toBe('pick_other');
+  });
+
+  it('gives each group its own heading', () => {
+    expect(momentFailureCopy('MOMENT_AUTHOR_FAILED', t)).toEqual({
+      kind: 'system',
+      title: 'moment.fail_system_title',
+      message: 'moment.fail_system_body',
+    });
+    expect(momentFailureCopy('COMPOSE_LIMIT_REACHED', t, 3)).toEqual({
+      kind: 'limit',
+      title: 'moment.fail_limit_title',
+      message: 'moment.limit_reached:{"limit":3}',
+    });
   });
 });

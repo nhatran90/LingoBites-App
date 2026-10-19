@@ -81,6 +81,14 @@ export function ComposeTrackerHost() {
 
   if (!unseen) return null;
   const ready = unseen.status === 'succeeded' && unseen.lessonId !== null;
+  const moment = unseen.kind === 'moment';
+  const heading = moment
+    ? ready
+      ? t('moment.card_ready')
+      : t('moment.card_failed')
+    : ready
+      ? t('compose.ready_title')
+      : t('compose.card_failed');
   return (
     <View
       accessibilityLiveRegion="polite"
@@ -90,9 +98,7 @@ export function ComposeTrackerHost() {
     >
       <View style={styles.banner}>
         <View style={styles.text}>
-          <AppText variant="label">
-            {ready ? t('compose.ready_title') : t('compose.card_failed')}
-          </AppText>
+          <AppText variant="label">{heading}</AppText>
           {unseen.sourceTitle ? (
             <AppText color="secondary" numberOfLines={1} variant="caption">
               {unseen.sourceTitle}
@@ -107,6 +113,20 @@ export function ComposeTrackerHost() {
             }}
             testID="compose-banner-open"
             title={t('compose.open')}
+            variant="primary"
+          />
+        ) : null}
+        {!ready && moment && navigation ? (
+          <AppButton
+            onPress={() => {
+              markComposeSeen(unseen.requestId);
+              navigation.startCreate({
+                kind: 'situation',
+                requestId: unseen.requestId,
+              });
+            }}
+            testID="compose-banner-view"
+            title={t('moment.banner_view')}
             variant="primary"
           />
         ) : null}

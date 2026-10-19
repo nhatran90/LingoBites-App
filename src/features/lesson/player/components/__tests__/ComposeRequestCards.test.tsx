@@ -105,4 +105,31 @@ describe('compose request cards and banner (wait design §3.2)', () => {
     patch({status: 'succeeded', lessonId: LESSON});
     expect(has(tree, 'compose-banner')).toBe(false);
   });
+
+  it('names a failed situation lesson and opens its screen to see why', () => {
+    const nav = {
+      openLesson: jest.fn(),
+      startCreate: jest.fn(),
+    } as unknown as AppNavigation;
+    const tree = renderWithTheme(
+      <AppNavigationProvider value={nav}>
+        <ComposeTrackerHost />
+      </AppNavigationProvider>,
+    );
+    patch({
+      kind: 'moment',
+      sourceTitle: 'Đi khám răng',
+      status: 'failed',
+      error: {code: 'MOMENT_AUTHOR_FAILED', retryable: true},
+    });
+    expect(textOf(tree, 'compose-banner')).toContain(
+      'Chưa tạo được bài từ tình huống',
+    );
+    expect(textOf(tree, 'compose-banner')).not.toContain('lộ trình');
+    press(tree, 'compose-banner-view');
+    expect(nav.startCreate).toHaveBeenCalledWith({
+      kind: 'situation',
+      requestId: REQUEST,
+    });
+  });
 });

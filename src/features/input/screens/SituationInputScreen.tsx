@@ -7,7 +7,9 @@ import {trackEvent} from '@features/analytics';
 import {
   dismissCompose,
   fetchComposeQuota,
+  markComposeSeen,
   resumeTrackedMoment,
+  setFocusedCompose,
   trackMoment,
 } from '@features/lesson/player';
 import {useLearnerProfileStore} from '@features/onboarding';
@@ -21,6 +23,7 @@ import {PrimaryActionButton} from '@ui/components/PrimaryActionButton';
 import {ScreenHeader} from '@ui/components/ScreenHeader';
 import {StickerButton} from '@ui/components/StickerButton';
 import {StickerFooter} from '@ui/components/StickerFooter';
+import type {HandoffIconName} from '@ui/icons/iconRegistry';
 import {type AppTheme, useAppTheme} from '@ui/theme';
 import {getStickerEdge} from '@ui/theme/hardShadow';
 import {HERO_PALETTE} from '@ui/theme/heroPalette';
@@ -29,19 +32,34 @@ import {useIsOffline} from '@core/api/connectivity';
 import {createRequestId} from '@core/api/requestId';
 import {useAppNavigation} from '@core/navigation';
 
+import {MomentBuildingCard} from '../components/MomentBuildingCard';
+import {MomentFailureCard} from '../components/MomentFailureCard';
 import {
   confirmMoment,
   fetchActiveMoments,
   fetchSituations,
+  type MomentStartBody,
   type Situation,
   submitMoment,
 } from '../logic/momentClient';
-import {momentFailureMessage} from '../logic/momentMessages';
+import {
+  momentFailureCopy,
+  type MomentFailureKind,
+  momentFailureMessage,
+} from '../logic/momentMessages';
 import {situationIcon} from '../logic/situationIcon';
 import {useMomentProgress} from '../logic/useMomentProgress';
 import type {CreateFlowParamList} from './navigationTypes';
 
 type Props = NativeStackScreenProps<CreateFlowParamList, 'SituationInput'>;
+
+type FooterAction = {
+  key: string;
+  label: string;
+  hint: string;
+  icon: HandoffIconName;
+  onPress: () => void;
+};
 
 /**
  * E3 (P2–P6): pick a situation or describe one, then follow the moment on this
@@ -71,8 +89,33 @@ export function SituationInputScreen({navigation, route}: Props) {
   const [quota, setQuota] = useState<{limit: number; remaining: number} | null>(
     null,
   );
+  // What the wait and failure states show, and what "Thử lại" sends again.
+  const [situationLabel, setSituationLabel] = useState<string | null>(null);
+  const [lastBody, setLastBody] = useState<MomentStartBody | null>(null);
   const progress = useMomentProgress(requestId);
   const status = progress.status;
+
+  // The moment on screen gets no banner of its own; a finished one counts as seen.
+  useEffect(() => {
+    if (!requestId) return undefined;
+    setFocusedCompose(requestId);
+    return () => setFocusedCompose(null);
+  }, [requestId]);
+  useEffect(() => {
+    if (
+      requestId &&
+      (status?.status === 'succeeded' || status?.status === 'failed')
+    ) {
+      markComposeSeen(requestId);
+    }
+  }, [requestId, status?.status]);
+  useEffect(() => {
+    if (status?.situation_vi) setSituationLabel(status.situation_vi);
+  }, [status?.situation_vi]);
+  // The server no longer knows this moment (another account): back to the form.
+  useEffect(() => {
+    if (progress.error?.kind === 'not-found') setRequestId(null);
+  }, [progress.error]);
 
   // E4: a describe moment started on the review screen is followed here.
   useEffect(() => {
@@ -97,7 +140,10 @@ export function SituationInputScreen({navigation, route}: Props) {
     });
     refreshQuota();
     fetchActiveMoments().then(result => {
-      if (result.ok && result.value[0]) setRequestId(result.value[0].id);
+      if (result.ok && result.value[0]) {
+        setRequestId(result.value[0].id);
+        setSituationLabel(result.value[0].situation_vi);
+      }
     });
   }, [kids, level, refreshQuota]);
 
@@ -125,24 +171,25 @@ export function SituationInputScreen({navigation, route}: Props) {
   function send() {
     if (!canSend) return;
     if (pickedNow && picked) {
-      start({situation_id: picked.id});
+      start({situation_id: picked.id}, picked.title_vi);
       return;
     }
-    start({situation_note: typed.trim()});
+    start({situation_note: typed.trim()}, typed.trim());
   }
 
-  async function start(body: {situation_id?: string; situation_note?: string}) {
+  async function start(
+    body: {situation_id?: string; situation_note?: string},
+    label: string,
+  ) {
     if (offline) return;
     setSubmitError(null);
-    const result = await submitMoment(
-      {
-        intent: 'use',
-        level,
-        ...body,
-        ...(imageText ? {image_text: imageText} : {}),
-      },
-      createRequestId(),
-    );
+    const full: MomentStartBody = {
+      intent: 'use',
+      level,
+      ...body,
+      ...(imageText ? {image_text: imageText} : {}),
+    };
+    const result = await submitMoment(full, createRequestId());
     if (!result.ok) {
       trackEvent('moment_rejected', {
         code: result.errorCode ?? 'unknown',
@@ -152,11 +199,50 @@ export function SituationInputScreen({navigation, route}: Props) {
       if (result.errorCode === 'COMPOSE_LIMIT_REACHED') refreshQuota();
       return;
     }
+    setLastBody(full);
+    setSituationLabel(label);
     setRequestId(result.value.moment_request_id);
     trackMoment({
       requestId: result.value.moment_request_id,
-      situationVi: null,
+      situationVi: label,
     });
+  }
+
+  /** "Thử lại tình huống này": the same situation, as a new request. */
+  async function retrySame() {
+    if (!lastBody || offline) return;
+    const previous = requestId;
+    setSubmitError(null);
+    const result = await submitMoment(lastBody, createRequestId());
+    if (!result.ok) {
+      trackEvent('moment_rejected', {
+        code: result.errorCode ?? 'unknown',
+        stage: 'retry',
+      });
+      setSubmitError(momentFailureMessage(result.errorCode, t, quota?.limit));
+      if (result.errorCode === 'COMPOSE_LIMIT_REACHED') refreshQuota();
+      return;
+    }
+    if (previous) dismissCompose(previous);
+    setRequestId(result.value.moment_request_id);
+    trackMoment({
+      requestId: result.value.moment_request_id,
+      situationVi: situationLabel,
+    });
+  }
+
+  /** Back to the form; `keepText` keeps what the learner typed to edit it. */
+  function backToForm(keepText: boolean) {
+    if (requestId) dismissCompose(requestId);
+    setRequestId(null);
+    setSubmitError(null);
+    if (keepText) {
+      if (!typed.trim() && situationLabel) setTyped(situationLabel);
+      setTimeout(() => inputRef.current?.focus(), 50);
+    } else {
+      setTyped('');
+      setPicked(null);
+    }
   }
 
   async function answer(accept: boolean) {
@@ -174,6 +260,125 @@ export function SituationInputScreen({navigation, route}: Props) {
     resumeTrackedMoment(requestId);
     progress.resume();
   }
+
+  const failedStatus = !kids && status?.status === 'failed';
+  const fatalPoll =
+    !kids && !!progress.error && progress.error.kind !== 'not-found';
+  const failureCode = failedStatus
+    ? status?.error?.code
+    : fatalPoll
+      ? progress.error?.errorCode
+      : undefined;
+  const failure =
+    failedStatus || fatalPoll
+      ? momentFailureCopy(failureCode, t, quota?.limit)
+      : null;
+  const building =
+    !kids &&
+    requestId !== null &&
+    failure === null &&
+    status?.status !== 'succeeded' &&
+    status?.status !== 'awaiting_confirmation';
+
+  function failureActions(kind: MomentFailureKind): FooterAction[] {
+    const home: FooterAction = {
+      key: 'home',
+      label: t('moment.go_home'),
+      hint: t('moment.go_home_hint'),
+      icon: 'home',
+      onPress: () => appNavigation.goToTab('Home'),
+    };
+    const pickOther: FooterAction = {
+      key: 'pick-other',
+      label: t('moment.pick_other'),
+      hint: t('moment.pick_other_hint'),
+      icon: 'edit',
+      onPress: () => backToForm(false),
+    };
+    switch (kind) {
+      case 'system':
+        return lastBody
+          ? [
+              {
+                key: 'retry',
+                label: t('moment.retry_same'),
+                hint: t('moment.retry_same_hint'),
+                icon: 'refresh',
+                onPress: retrySame,
+              },
+              pickOther,
+            ]
+          : [pickOther, home];
+      case 'not_suitable':
+        return [
+          {
+            key: 'edit',
+            label: t('moment.edit_and_resend'),
+            hint: t('moment.edit_and_resend_hint'),
+            icon: 'edit',
+            onPress: () => backToForm(true),
+          },
+        ];
+      case 'paused':
+        return [
+          {
+            key: 'library',
+            label: t('moment.see_moments'),
+            hint: t('moment.see_moments_hint'),
+            icon: 'auto_stories',
+            onPress: () => appNavigation.openLibrarySection('moments'),
+          },
+          home,
+        ];
+      case 'limit':
+        return [home];
+      case 'cancelled':
+        return [
+          {
+            key: 'new',
+            label: t('moment.start_new'),
+            hint: t('moment.start_new_hint'),
+            icon: 'add',
+            onPress: () => backToForm(true),
+          },
+        ];
+      default:
+        return [pickOther];
+    }
+  }
+
+  const footerActions: FooterAction[] = failure
+    ? failureActions(failure.kind)
+    : building
+      ? progress.waitingNetwork
+        ? [
+            {
+              key: 'check',
+              label: t('moment.check_again'),
+              hint: t('moment.check_again_hint'),
+              icon: 'refresh',
+              onPress: progress.checkNow,
+            },
+            {
+              key: 'home',
+              label: t('moment.go_home'),
+              hint: t('moment.go_home_hint'),
+              icon: 'home',
+              onPress: () => appNavigation.goToTab('Home'),
+            },
+          ]
+        : [
+            {
+              key: 'leave',
+              label: t('moment.wait_leave'),
+              hint: t('moment.wait_leave_hint'),
+              icon: 'home',
+              onPress: () => appNavigation.goToTab('Home'),
+            },
+          ]
+      : [];
+  // While waiting, leaving is the only action, so it is the lighter button.
+  const firstTone = building && !progress.waitingNetwork ? 'ghost' : 'coral';
 
   const titleKey = 'moment.title';
   return (
@@ -215,7 +420,12 @@ export function SituationInputScreen({navigation, route}: Props) {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          {paddingBottom: showInput ? theme.spacing.lg : floatingClearance},
+          {
+            paddingBottom:
+              showInput || footerActions.length > 0
+                ? theme.spacing.lg
+                : floatingClearance,
+          },
         ]}
         keyboardShouldPersistTaps="handled"
         ref={scrollRef}
@@ -248,15 +458,12 @@ export function SituationInputScreen({navigation, route}: Props) {
           </View>
         ) : null}
 
-        {!kids &&
-        progress.polling &&
-        status &&
-        !['succeeded', 'failed', 'awaiting_confirmation'].includes(
-          status.status,
-        ) ? (
-          <AppText color="secondary" testID="moment-building">
-            {t('moment.building')}
-          </AppText>
+        {building ? (
+          <MomentBuildingCard
+            situation={situationLabel}
+            stage={status?.compose?.stage}
+            waitingNetwork={progress.waitingNetwork}
+          />
         ) : null}
 
         {!kids && status?.status === 'succeeded' && status.lesson_id ? (
@@ -268,11 +475,22 @@ export function SituationInputScreen({navigation, route}: Props) {
           />
         ) : null}
 
-        {!kids && status?.status === 'failed' ? (
-          <ErrorCard
-            message={momentFailureMessage(status.error?.code, t, quota?.limit)}
-            onRetry={() => setRequestId(null)}
-            retryLabel={t('moment.confirm_edit')}
+        {failure ? (
+          <MomentFailureCard
+            kind={failure.kind}
+            message={failure.message}
+            reason={status?.compose?.reason_vi}
+            reference={
+              failureCode && requestId
+                ? t('moment.fail_code', {
+                    code: failureCode,
+                    ref: requestId.slice(0, 4),
+                  })
+                : null
+            }
+            situation={situationLabel}
+            suggestion={status?.compose?.suggestion_vi}
+            title={failure.title}
           />
         ) : null}
 
@@ -437,6 +655,21 @@ export function SituationInputScreen({navigation, route}: Props) {
           <AppText color="secondary">{t('moment.offline')}</AppText>
         ) : null}
       </ScrollView>
+      {!showInput && footerActions.length > 0 ? (
+        <StickerFooter>
+          {footerActions.map((action, index) => (
+            <StickerButton
+              key={action.key}
+              accessibilityHint={action.hint}
+              icon={action.icon}
+              label={action.label}
+              onPress={action.onPress}
+              testID={`moment-action-${action.key}`}
+              tone={index === 0 ? firstTone : 'ghost'}
+            />
+          ))}
+        </StickerFooter>
+      ) : null}
       {showInput ? (
         <StickerFooter>
           <StickerButton

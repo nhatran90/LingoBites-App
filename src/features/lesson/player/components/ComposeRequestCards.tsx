@@ -47,12 +47,13 @@ export function ComposeRequestCards({testID = 'compose-cards'}) {
   const open = (entry: ComposeEntry) => {
     if (!navigation) return;
     if (entry.kind === 'moment') {
-      // A moment opens where it can be answered or read; nothing to open while it runs.
-      if (entry.status === 'awaiting') {
-        navigation.startCreate({kind: 'situation', requestId: entry.requestId});
-      } else if (entry.status === 'succeeded' && entry.lessonId) {
+      // A moment opens its lesson when ready, otherwise the screen that follows it
+      // (waiting, confirming, or why it failed).
+      if (entry.status === 'succeeded' && entry.lessonId) {
         markComposeSeen(entry.requestId);
         navigation.openLesson(entry.lessonId);
+      } else {
+        navigation.startCreate({kind: 'situation', requestId: entry.requestId});
       }
       return;
     }
@@ -77,7 +78,7 @@ export function ComposeRequestCards({testID = 'compose-cards'}) {
                 : entry.status === 'succeeded'
                   ? 'moment.card_ready'
                   : entry.status === 'failed'
-                    ? 'compose.card_failed'
+                    ? 'moment.card_failed'
                     : 'moment.card_running',
             )
           : running

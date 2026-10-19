@@ -688,6 +688,7 @@
     "path_done": "Đã đi hết lộ trình",
     "path_a11y": "Lộ trình: xong {{done}} trên {{total}} phần",
     "path_review_skipped": "Chưa có gì cần ôn — vào thẳng bài mới.",
+    "path_ring_caption": "bước",
     "content_title": "Từ & nội dung bài",
     "tab_words": "Từ & cụm · {{count}}",
     "tab_sentences": "Nội dung · {{count}} câu",

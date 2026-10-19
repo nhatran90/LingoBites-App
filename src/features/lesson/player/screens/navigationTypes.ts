@@ -5,6 +5,8 @@ export type CanonicalLessonPlayerRouteParams = {
 /** PR 10: the six-step player of a curriculum lesson. */
 export type LessonFlowPlayerRouteParams = {
   lessonId: string;
+  /** Open on the lesson map ("Xem chi tiết") instead of the step to do. */
+  showMap?: boolean;
 };
 
 export type LessonCreationRouteParams = {

@@ -12,6 +12,11 @@ import {
 import {AppScreen} from '@ui/components/AppScreen';
 import {AppText} from '@ui/components/AppText';
 import {
+  CurriculumHeroChrome,
+  useHeroScroll,
+} from '@ui/components/CurriculumHeroChrome';
+import {CurriculumHeroCover} from '@ui/components/CurriculumHeroCover';
+import {
   lessonCardDurationLabel,
   splitLessonTitle,
 } from '@ui/components/LessonCard';
@@ -24,11 +29,6 @@ import {type AppTheme, useAppTheme} from '@ui/theme';
 
 import {useAppNavigation} from '@core/navigation';
 
-import {
-  CurriculumHeroChrome,
-  useHeroScroll,
-} from '../components/CurriculumHeroChrome';
-import {CurriculumHeroCover} from '../components/CurriculumHeroCover';
 import {CurriculumList} from '../components/CurriculumList';
 import {
   LessonStep,

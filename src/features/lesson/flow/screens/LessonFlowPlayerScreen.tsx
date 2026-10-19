@@ -8,6 +8,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import {useSharedValue} from 'react-native-reanimated';
 
 import {SpeakContext, SpeechNotice, useSpeak} from '@features/audio';
 import {getGamificationSnapshot} from '@features/engagement';
@@ -15,6 +16,7 @@ import {getGamificationSnapshot} from '@features/engagement';
 import {AppButton} from '@ui/components/AppButton';
 import {AppScreen} from '@ui/components/AppScreen';
 import {AppText} from '@ui/components/AppText';
+import {CurriculumHeroChrome} from '@ui/components/CurriculumHeroChrome';
 import {
   HEADER_BUTTON_RADIUS,
   HEADER_BUTTON_SIZE,
@@ -36,6 +38,7 @@ import type {
 
 import {StudyLabel} from '../../player/components/StudyControls';
 import {isLessonNotDownloaded} from '../../player/logic/lessonNotDownloaded';
+import {useLessonPictures} from '../../player/logic/lessonPictures';
 import {useCanonicalLesson} from '../../player/logic/useCanonicalLesson';
 import type {LessonFlowParamList} from '../../player/screens/navigationTypes';
 import {
@@ -76,7 +79,7 @@ const STEP_LABEL_KEYS: Record<FlowStep, string> = {
  * IGNORE_TAB_BAR_CLEARANCE: a root-stack screen, drawn above the tab bar.
  */
 export function LessonFlowPlayerScreen({navigation, route}: Props) {
-  const {lessonId} = route.params;
+  const {lessonId, showMap: openOnMap} = route.params;
   const {theme} = useAppTheme();
   const {t} = useTranslation();
   const themedStyles = useMemo(() => makeStyles(theme), [theme]);
@@ -115,8 +118,14 @@ export function LessonFlowPlayerScreen({navigation, route}: Props) {
   );
 
   const goTo = flow.goTo;
-  /** Redesign: the lesson map, shown once before anything was done. */
-  const [showMap, setShowMap] = useState(false);
+  /** The lesson map, opened from "Xem chi tiết"; "Bắt đầu" skips it. */
+  const [showMap, setShowMap] = useState(openOnMap === true);
+  const scrollY = useSharedValue(0);
+  const pictures = useLessonPictures(
+    lessonId,
+    snapshot?.unit != null,
+    state.status === 'ready' ? state.offline : false,
+  );
   const [streakDays] = useState(readStreakDays);
   const footer = useFlowFooterHost();
   const openStep = useCallback(
@@ -128,14 +137,13 @@ export function LessonFlowPlayerScreen({navigation, route}: Props) {
     [goTo],
   );
 
-  // A new lesson opens on its map; step 1 with nothing to review is skipped.
+  // Step 1 with nothing to review is skipped.
   const firstStepChecked = useRef(false);
   useEffect(() => {
     if (firstStepChecked.current || flow.step === null) return;
     firstStepChecked.current = true;
-    if (flow.attempts.length === 0) setShowMap(true);
     if (flow.step === 1 && reviewSkipped) goTo(2);
-  }, [flow.step, flow.attempts.length, reviewSkipped, goTo]);
+  }, [flow.step, reviewSkipped, goTo]);
 
   const {speak: handleSpeak, notice: speechNotice} = useSpeak();
 
@@ -216,8 +224,10 @@ export function LessonFlowPlayerScreen({navigation, route}: Props) {
     if (showMap) {
       return (
         <LessonMap
+          coverUrl={pictures.coverUrl}
           nextStep={step}
           onOpenStep={openStep}
+          scrollY={scrollY}
           skippedSteps={skippedSteps}
           snapshot={snapshot}
         />
@@ -338,40 +348,24 @@ export function LessonFlowPlayerScreen({navigation, route}: Props) {
       ? null
       : (!showMap && footer.action) || defaultAction;
 
+  const mapShown = shownStep !== null && showMap;
+  const streakChip = streakDays ? (
+    <View style={themedStyles.streak} testID="lesson-flow-map-streak">
+      <MaterialIcon
+        color={theme.colors.onTertiaryContainer}
+        name="local_fire_department"
+        size={18}
+      />
+      <AppText style={themedStyles.streakText} variant="label">
+        {t('lessonFlow.map_streak_short', {count: streakDays})}
+      </AppText>
+    </View>
+  ) : null;
+
   return (
-    <AppScreen>
+    <AppScreen edges={mapShown ? ['left', 'right', 'bottom'] : undefined}>
       <FlowFooterProvider register={footer.register}>
-        {shownStep !== null && showMap ? (
-          <View style={themedStyles.header}>
-            <HeaderIconButton
-              accessibilityHint={t('lessonFlow.close_lesson_hint')}
-              accessibilityLabel={t('lessonFlow.close_lesson')}
-              icon="close"
-              onPress={appNavigation.closeLesson}
-              testID="lesson-flow-close"
-            />
-            <AppText
-              color="secondary"
-              numberOfLines={1}
-              style={themedStyles.flex}
-              variant="label"
-            >
-              {unit?.unit_title ?? t('lessonFlow.map_lesson')}
-            </AppText>
-            {streakDays ? (
-              <View style={themedStyles.streak} testID="lesson-flow-map-streak">
-                <MaterialIcon
-                  color={theme.colors.onTertiaryContainer}
-                  name="local_fire_department"
-                  size={18}
-                />
-                <AppText style={themedStyles.streakText} variant="label">
-                  {t('lessonFlow.map_streak_short', {count: streakDays})}
-                </AppText>
-              </View>
-            ) : null}
-          </View>
-        ) : (
+        {mapShown ? null : (
           <View style={themedStyles.header}>
             <HeaderIconButton
               accessibilityHint={t('lessonFlow.close_lesson_hint')}
@@ -440,7 +434,15 @@ export function LessonFlowPlayerScreen({navigation, route}: Props) {
         ) : null}
         <ScrollView
           contentContainerStyle={themedStyles.content}
+          onScroll={
+            mapShown
+              ? event => {
+                  scrollY.value = event.nativeEvent.contentOffset.y;
+                }
+              : undefined
+          }
           ref={scrollRef}
+          scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
           style={themedStyles.scroll}
           testID="lesson-flow-screen"
@@ -449,6 +451,18 @@ export function LessonFlowPlayerScreen({navigation, route}: Props) {
             {renderBody()}
           </SpeakContext.Provider>
         </ScrollView>
+        {mapShown ? (
+          <CurriculumHeroChrome
+            onBack={() =>
+              navigation.canGoBack()
+                ? navigation.goBack()
+                : appNavigation.closeLesson()
+            }
+            rightAccessory={streakChip}
+            scrollY={scrollY}
+            title={snapshot?.title ?? t('lessonFlow.map_lesson')}
+          />
+        ) : null}
         {footerAction ? <FlowFooterBar action={footerAction} /> : null}
       </FlowFooterProvider>
     </AppScreen>

@@ -3,13 +3,13 @@ import React, {useCallback} from 'react';
 import {useTranslation} from 'react-i18next';
 import {View} from 'react-native';
 
+import type {HeroScrollHandler} from '@ui/components/CurriculumHeroChrome';
 import {LibraryCover} from '@ui/components/LibraryCover';
 import {useAppTheme} from '@ui/theme';
 
 import type {CourseUnit} from '../logic/courseClient';
 import {curriculumGlyph} from '../logic/curriculumCover';
 import {useLevelUnits} from '../logic/useCurriculum';
-import type {HeroScrollHandler} from './CurriculumHeroChrome';
 import {CurriculumList} from './CurriculumList';
 import {RouteFinish} from './RouteFinish';
 import {

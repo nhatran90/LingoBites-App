@@ -3,6 +3,7 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Alert, ScrollView, StyleSheet, View} from 'react-native';
+import {useSharedValue} from 'react-native-reanimated';
 
 import {useSpeak} from '@features/audio';
 
@@ -10,6 +11,7 @@ import {AppButton} from '@ui/components/AppButton';
 import {AppScreen} from '@ui/components/AppScreen';
 import {AppText} from '@ui/components/AppText';
 import {BottomActionBar} from '@ui/components/BottomActionBar';
+import {CurriculumHeroChrome} from '@ui/components/CurriculumHeroChrome';
 import {HeaderIconButton} from '@ui/components/HeaderIconButton';
 import {useFloatingTabBarClearance} from '@ui/components/layout';
 import {PrimaryActionButton} from '@ui/components/PrimaryActionButton';
@@ -155,6 +157,7 @@ export function CanonicalLessonPlayerScreen({navigation, route}: Props) {
   const [composeOpen, setComposeOpen] = useState(false);
   const [composePicks, setComposePicks] = useState<string[] | undefined>();
   const scrollRef = useRef<ScrollView>(null);
+  const scrollY = useSharedValue(0);
 
   useEffect(() => {
     open();
@@ -377,6 +380,8 @@ export function CanonicalLessonPlayerScreen({navigation, route}: Props) {
   );
 
   const showHub = snapshot !== null && !isYouTube && view === 'hub';
+  // A curriculum lesson's overview opens on its cover, as its course does.
+  const coverHub = showHub && snapshot.unit != null;
   // Lesson names can be long: the header keeps a short generic title and
   // the full lesson name is rendered in the page body.
   const title = inSection
@@ -598,36 +603,37 @@ export function CanonicalLessonPlayerScreen({navigation, route}: Props) {
     switch (view) {
       case 'hub':
         return (
-          <>
-            <LessonMediaDownloadCard
-              offline={offline}
-              onDownload={lessonMedia.download}
-              onRemove={lessonMedia.remove}
-              status={lessonMedia.status}
-            />
-            <CanonicalLessonHub
-              snapshot={snapshot}
-              analyses={analyses}
-              offline={state.status === 'ready' ? state.offline : false}
-              hasUpdate={state.status === 'ready' ? state.hasUpdate : false}
-              onOpenSection={openView}
-              onOpenLesson={appNavigation.openLesson}
-              onOpenPractice={
-                practiceEnabled && !practiceRun ? openPractice : undefined
-              }
-              onOpenCompose={openCompose}
-              onSpeakText={handleSpeak}
-              flowEntry={flowEntry}
-              onOpenFlow={
-                flowEntry.available
-                  ? () => appNavigation.openLessonFlow(lessonId)
-                  : undefined
-              }
-              onDeleteLesson={
-                snapshot.origin === 'learner' ? confirmDelete : undefined
-              }
-            />
-          </>
+          <CanonicalLessonHub
+            mediaCard={
+              <LessonMediaDownloadCard
+                offline={offline}
+                onDownload={lessonMedia.download}
+                onRemove={lessonMedia.remove}
+                status={lessonMedia.status}
+              />
+            }
+            scrollY={coverHub ? scrollY : undefined}
+            snapshot={snapshot}
+            analyses={analyses}
+            offline={state.status === 'ready' ? state.offline : false}
+            hasUpdate={state.status === 'ready' ? state.hasUpdate : false}
+            onOpenSection={openView}
+            onOpenLesson={appNavigation.openLesson}
+            onOpenPractice={
+              practiceEnabled && !practiceRun ? openPractice : undefined
+            }
+            onOpenCompose={openCompose}
+            onSpeakText={handleSpeak}
+            flowEntry={flowEntry}
+            onOpenFlow={
+              flowEntry.available
+                ? () => appNavigation.openLessonFlow(lessonId, {showMap: true})
+                : undefined
+            }
+            onDeleteLesson={
+              snapshot.origin === 'learner' ? confirmDelete : undefined
+            }
+          />
         );
       case 'sentences':
         return renderPlayer();
@@ -703,74 +709,81 @@ export function CanonicalLessonPlayerScreen({navigation, route}: Props) {
             });
 
   return (
-    <AppScreen offlineCopy={state.status === 'ready' && state.offline}>
-      <ScreenHeader
-        title={studyReady && snapshot ? snapshot.title : title}
-        subtitle={
-          studyReady && currentSentence && currentSentence.total > 0
-            ? t('youtube.study.header_subtitle', {
-                index: currentSentence.position,
-                total: currentSentence.total,
-                time: formatCueLabel(currentSentence.startMs),
-              })
-            : undefined
-        }
-        onBack={() => (inSection ? openView('hub') : navigation.goBack())}
-        rightAction={
-          studyReady ? (
-            <>
-              {practiceRun ? (
-                // The practice run is the YouTube lesson's way to complete;
-                // the label carries the next segment of a long lesson.
-                <HeaderIconButton
-                  accessibilityHint={t('practice.start_hint')}
-                  accessibilityLabel={startLabel}
-                  icon="fitness_center"
-                  onPress={openPractice}
-                  testID="canonical-youtube-practice"
+    <AppScreen
+      edges={coverHub ? ['left', 'right', 'bottom'] : undefined}
+      offlineCopy={state.status === 'ready' && state.offline}
+    >
+      {coverHub ? null : (
+        <ScreenHeader
+          title={studyReady && snapshot ? snapshot.title : title}
+          subtitle={
+            studyReady && currentSentence && currentSentence.total > 0
+              ? t('youtube.study.header_subtitle', {
+                  index: currentSentence.position,
+                  total: currentSentence.total,
+                  time: formatCueLabel(currentSentence.startMs),
+                })
+              : undefined
+          }
+          onBack={() => (inSection ? openView('hub') : navigation.goBack())}
+          rightAction={
+            studyReady ? (
+              <>
+                {practiceRun ? (
+                  // The practice run is the YouTube lesson's way to complete;
+                  // the label carries the next segment of a long lesson.
+                  <HeaderIconButton
+                    accessibilityHint={t('practice.start_hint')}
+                    accessibilityLabel={startLabel}
+                    icon="fitness_center"
+                    onPress={openPractice}
+                    testID="canonical-youtube-practice"
+                  />
+                ) : null}
+                {openCompose ? (
+                  <HeaderIconButton
+                    accessibilityHint={t('compose.entry_subtitle')}
+                    accessibilityLabel={t('compose.entry_a11y')}
+                    icon="add"
+                    onPress={openCompose}
+                    testID="youtube-open-compose"
+                  />
+                ) : null}
+                <LessonDisplayToggles
+                  onCycleRepeat={() => setSentenceRepeat(nextSentenceRepeat)}
+                  onToggleIpa={() => setShowIpa(value => !value)}
+                  sentenceRepeat={sentenceRepeat}
+                  onToggleTranslation={() =>
+                    setShowTranslation(value => !value)
+                  }
+                  showIpa={showIpa}
+                  showTranslation={showTranslation}
                 />
-              ) : null}
-              {openCompose ? (
-                <HeaderIconButton
-                  accessibilityHint={t('compose.entry_subtitle')}
-                  accessibilityLabel={t('compose.entry_a11y')}
-                  icon="add"
-                  onPress={openCompose}
-                  testID="youtube-open-compose"
-                />
-              ) : null}
-              <LessonDisplayToggles
-                onCycleRepeat={() => setSentenceRepeat(nextSentenceRepeat)}
-                onToggleIpa={() => setShowIpa(value => !value)}
-                sentenceRepeat={sentenceRepeat}
-                onToggleTranslation={() => setShowTranslation(value => !value)}
-                showIpa={showIpa}
-                showTranslation={showTranslation}
+              </>
+            ) : inSection ? (
+              // Back returns to the hub; close leaves the lesson in one tap.
+              <HeaderIconButton
+                accessibilityHint={t('lessonFlow.close_lesson_hint')}
+                accessibilityLabel={t('lessonFlow.close_lesson')}
+                icon="close"
+                onPress={appNavigation.closeLesson}
+                testID="canonical-close-lesson"
               />
-            </>
-          ) : inSection ? (
-            // Back returns to the hub; close leaves the lesson in one tap.
-            <HeaderIconButton
-              accessibilityHint={t('lessonFlow.close_lesson_hint')}
-              accessibilityLabel={t('lessonFlow.close_lesson')}
-              icon="close"
-              onPress={appNavigation.closeLesson}
-              testID="canonical-close-lesson"
-            />
-          ) : showHub &&
-            completionState !== 'finished' &&
-            !flowEntry.available &&
-            !practiceRun ? (
-            <HeaderIconButton
-              accessibilityHint={t('lessonPlayer.complete_lesson_hint')}
-              accessibilityLabel={t('lessonPlayer.complete_lesson')}
-              icon="check_circle"
-              onPress={completeLesson}
-              testID="canonical-hub-complete"
-            />
-          ) : undefined
-        }
-      />
+            ) : showHub &&
+              completionState !== 'finished' &&
+              !flowEntry.available &&
+              !practiceRun ? (
+              <HeaderIconButton
+                accessibilityHint={t('lessonPlayer.complete_lesson_hint')}
+                accessibilityLabel={t('lessonPlayer.complete_lesson')}
+                icon="check_circle"
+                onPress={completeLesson}
+                testID="canonical-hub-complete"
+              />
+            ) : undefined
+          }
+        />
+      )}
       {speechNotice ? (
         <View style={themedStyles.speechNotice} testID="lesson-speech-notice">
           <AppText color="danger">
@@ -786,7 +799,15 @@ export function CanonicalLessonPlayerScreen({navigation, route}: Props) {
         </View>
       ) : (
         <ScrollView
+          onScroll={
+            coverHub
+              ? event => {
+                  scrollY.value = event.nativeEvent.contentOffset.y;
+                }
+              : undefined
+          }
           ref={scrollRef}
+          scrollEventThrottle={16}
           style={themedStyles.scroll}
           testID="canonical-player-screen"
           showsVerticalScrollIndicator={false}
@@ -798,6 +819,13 @@ export function CanonicalLessonPlayerScreen({navigation, route}: Props) {
           {renderBody()}
         </ScrollView>
       )}
+      {coverHub ? (
+        <CurriculumHeroChrome
+          onBack={() => navigation.goBack()}
+          scrollY={scrollY}
+          title={snapshot.title}
+        />
+      ) : null}
       {showHub ? (
         <BottomActionBar style={themedStyles.actionBar}>
           {flowEntry.available ? (

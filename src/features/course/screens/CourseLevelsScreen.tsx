@@ -6,15 +6,15 @@ import {StyleSheet, View} from 'react-native';
 
 import {AppScreen} from '@ui/components/AppScreen';
 import {AppText} from '@ui/components/AppText';
+import {
+  CurriculumHeroChrome,
+  useHeroScroll,
+} from '@ui/components/CurriculumHeroChrome';
+import {CurriculumHeroCover} from '@ui/components/CurriculumHeroCover';
 import {ScreenHeader} from '@ui/components/ScreenHeader';
 import {SkeletonBlock, SkeletonGroup} from '@ui/components/Skeleton';
 import {type AppTheme, useAppTheme} from '@ui/theme';
 
-import {
-  CurriculumHeroChrome,
-  useHeroScroll,
-} from '../components/CurriculumHeroChrome';
-import {CurriculumHeroCover} from '../components/CurriculumHeroCover';
 import {CurriculumList} from '../components/CurriculumList';
 import {levelName, LevelPassSwitcher} from '../components/LevelPassSwitcher';
 import {LevelUnitList, UnitRouteSkeleton} from '../components/LevelUnitList';

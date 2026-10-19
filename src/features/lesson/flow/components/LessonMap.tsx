@@ -7,16 +7,22 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import type {SharedValue} from 'react-native-reanimated';
 import Svg, {Path} from 'react-native-svg';
 
 import {AppText} from '@ui/components/AppText';
+import {Chip} from '@ui/components/Chip';
+import {CurriculumHeroCover} from '@ui/components/CurriculumHeroCover';
 import {MaterialIcon} from '@ui/components/MaterialIcon';
+import {SectionHeader} from '@ui/components/SectionHeader';
 import type {HandoffIconName} from '@ui/icons/iconRegistry';
 import {type AppTheme, useAppTheme} from '@ui/theme';
 import {getStickerFace} from '@ui/theme/hardShadow';
 
 import {itemCardIds, type LessonSnapshot} from '@core/schemas/lesson';
 
+import {LessonOutcomeCard} from '../../player/components/LessonOutcomeCard';
+import {collectLessonOutcome} from '../../player/logic/lessonHubContent';
 import {flowActivity} from '../logic/flowContent';
 import {
   blocksOfStep,
@@ -26,6 +32,10 @@ import {
 
 export type LessonMapProps = {
   snapshot: LessonSnapshot;
+  /** The lesson's cover picture; null shows the default cover. */
+  coverUrl?: string | null;
+  /** The screen's scroll offset, for the cover's parallax. */
+  scrollY?: SharedValue<number>;
   /** The step "Bắt đầu học" opens (2 when step 1 is skipped). */
   nextStep: FlowStep;
   /** Steps with nothing to do (an empty step 1): left off the path. */
@@ -33,7 +43,8 @@ export type LessonMapProps = {
   onOpenStep: (step: FlowStep) => void;
 };
 
-const STEP_ICONS: Record<FlowStep, HandoffIconName> = {
+/** One picture per step, on this map and on the lesson page's path. */
+export const FLOW_STEP_ICONS: Record<FlowStep, HandoffIconName> = {
   1: 'history_edu',
   2: 'hearing',
   3: 'mic',
@@ -52,12 +63,14 @@ const HALO = 92;
 const LABEL_WIDTH = 168;
 
 /**
- * Redesign: the lesson's goal and its steps as a winding path, shown the
- * first time a lesson is opened (no attempt yet). Each stop opens its step;
- * a skipped step has no stop.
+ * Redesign: the lesson's cover, goal and steps as a winding path, opened
+ * from "Xem chi tiết" on the lesson page. Each stop opens its step; a
+ * skipped step has no stop.
  */
 export function LessonMap({
   snapshot,
+  coverUrl,
+  scrollY,
   nextStep,
   skippedSteps,
   onOpenStep,
@@ -71,6 +84,7 @@ export function LessonMap({
   const width = measured || window.width - theme.gutter * 2;
   const spec = snapshot.spec;
   const level = spec?.code?.split('-')[0] ?? null;
+  const outcome = useMemo(() => collectLessonOutcome(snapshot), [snapshot]);
   const activityCount = useMemo(
     () => snapshot.blocks.filter(block => flowActivity(block) !== null).length,
     [snapshot],
@@ -116,47 +130,49 @@ export function LessonMap({
 
   return (
     <View style={themedStyles.container} testID="lesson-flow-map">
-      <View style={themedStyles.goal}>
-        <View style={themedStyles.goalHeader}>
-          <AppText style={themedStyles.goalLabel} variant="caption">
-            {t('lessonFlow.map_goal_label')}
-          </AppText>
-          {level ? (
-            <View style={themedStyles.level}>
-              <AppText style={themedStyles.levelText} variant="caption">
-                {level}
-              </AppText>
-            </View>
-          ) : null}
-        </View>
-        <AppText style={themedStyles.onPrimary} variant="h1">
-          {snapshot.title}
-        </AppText>
-        {spec && spec.can_do.length > 0 ? (
-          <AppText style={themedStyles.goalText} testID="lesson-flow-map-goal">
-            {t('lessonFlow.map_can_do_lead')}{' '}
-            <AppText style={themedStyles.goalStrong}>
-              {spec.can_do.join(' · ')}
+      <CurriculumHeroCover
+        glyph="book"
+        imageUrl={coverUrl}
+        level={level}
+        scrollY={scrollY}
+        testID="lesson-flow-map-cover"
+      >
+        <View style={themedStyles.titleBlock}>
+          {snapshot.unit ? (
+            <AppText
+              numberOfLines={1}
+              style={themedStyles.crumb}
+              variant="caption"
+            >
+              {snapshot.unit.unit_title}
             </AppText>
-          </AppText>
-        ) : null}
+          ) : null}
+          <AppText variant="h1">{snapshot.title}</AppText>
+        </View>
         <View style={themedStyles.pills}>
           {spec?.estimated_minutes ? (
-            <View style={themedStyles.pill}>
-              <AppText style={themedStyles.pillText} variant="caption">
-                {t('lessonFlow.map_minutes', {count: spec.estimated_minutes})}
-              </AppText>
-            </View>
+            <Chip
+              label={t('lessonFlow.map_minutes', {
+                count: spec.estimated_minutes,
+              })}
+            />
           ) : null}
           {activityCount > 0 ? (
-            <View style={themedStyles.pill}>
-              <AppText style={themedStyles.pillText} variant="caption">
-                {t('lessonFlow.map_activities', {count: activityCount})}
-              </AppText>
-            </View>
+            <Chip
+              label={t('lessonFlow.map_activities', {count: activityCount})}
+            />
           ) : null}
+          {level ? <Chip label={level} /> : null}
         </View>
-      </View>
+      </CurriculumHeroCover>
+
+      {outcome ? (
+        <View testID="lesson-flow-map-goal">
+          <LessonOutcomeCard outcome={outcome} />
+        </View>
+      ) : null}
+
+      <SectionHeader title={t('lessonPlayer.path_title')} />
 
       <View
         onLayout={(event: LayoutChangeEvent) =>
@@ -235,7 +251,7 @@ export function LessonMap({
                       color={
                         next ? theme.colors.accentInk : theme.colors.text.muted
                       }
-                      name={STEP_ICONS[step]}
+                      name={FLOW_STEP_ICONS[step]}
                       size={next ? 32 : 26}
                     />
                   </Pressable>
@@ -297,30 +313,9 @@ function makeStyles(theme: AppTheme) {
     container: {
       gap: theme.spacing.md,
     },
-    goal: {
-      backgroundColor: colors.primary,
-      borderRadius: theme.radius.xl,
-      gap: theme.spacing.md,
-      padding: theme.spacing.lg,
-      ...getStickerFace(theme, 5),
-    },
-    goalHeader: {
-      alignItems: 'center',
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-    },
-    goalLabel: {
-      color: colors.accent,
+    crumb: {
+      color: colors.primary,
       fontWeight: theme.typography.weight.bold,
-      letterSpacing: 1,
-      textTransform: 'uppercase',
-    },
-    goalStrong: {
-      color: colors.text.inverse,
-      fontWeight: theme.typography.weight.bold,
-    },
-    goalText: {
-      color: colors.accentSoft,
     },
     halo: {
       borderColor: colors.accent,
@@ -339,16 +334,6 @@ function makeStyles(theme: AppTheme) {
       alignItems: 'flex-end',
     },
     labelTitle: {
-      fontWeight: theme.typography.weight.bold,
-    },
-    level: {
-      backgroundColor: colors.accent,
-      borderRadius: theme.radius.pill,
-      paddingHorizontal: theme.spacing.sm,
-      paddingVertical: 2,
-    },
-    levelText: {
-      color: colors.accentInk,
       fontWeight: theme.typography.weight.bold,
     },
     nextTag: {
@@ -383,19 +368,6 @@ function makeStyles(theme: AppTheme) {
       borderColor: colors.outlineVariant,
       borderWidth: 2,
     },
-    onPrimary: {
-      color: colors.text.inverse,
-    },
-    pill: {
-      backgroundColor: colors.overlayLight,
-      borderRadius: theme.radius.pill,
-      paddingHorizontal: theme.spacing.md,
-      paddingVertical: theme.spacing.xs,
-    },
-    pillText: {
-      color: colors.text.inverse,
-      fontWeight: theme.typography.weight.medium,
-    },
     pills: {
       flexDirection: 'row',
       flexWrap: 'wrap',
@@ -403,6 +375,9 @@ function makeStyles(theme: AppTheme) {
     },
     right: {
       textAlign: 'right',
+    },
+    titleBlock: {
+      gap: theme.spacing.xs,
     },
   });
 }

@@ -210,8 +210,9 @@ export function BookmarkToggle({
 
 type SpeakSquareProps = {
   onPress: () => void;
-  /** `timer` for "Nghe chậm". */
   icon?: HandoffIconName;
+  /** Short text after the icon: "0.5×" for "Nghe chậm" (as `ListenButtons`). */
+  label?: string;
   accessibilityLabel: string;
   accessibilityHint?: string;
   onTint?: boolean;
@@ -222,6 +223,7 @@ type SpeakSquareProps = {
 export function SpeakSquare({
   onPress,
   icon = 'volume_up',
+  label,
   accessibilityLabel,
   accessibilityHint,
   onTint = false,
@@ -232,6 +234,7 @@ export function SpeakSquare({
       accessibilityHint={accessibilityHint}
       accessibilityLabel={accessibilityLabel}
       icon={icon}
+      label={label}
       onPress={onPress}
       onTint={onTint}
       testID={testID}

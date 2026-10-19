@@ -197,7 +197,7 @@ function ListenCard({id, item}: {id: string; item: CatalogItem}) {
         <SpeakSquare
           accessibilityHint={t('lessonFlow.listen_slow_hint')}
           accessibilityLabel={t('lessonFlow.listen_slow')}
-          icon="timer"
+          label={t('listen.slow_badge')}
           onPress={() => {
             speak(item.text, SLOW_TTS_RATE);
           }}

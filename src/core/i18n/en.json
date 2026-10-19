@@ -1912,7 +1912,8 @@
     "normal_hint": "Reads it aloud with the model voice",
     "slow": "Listen slowly",
     "slow_hint": "Reads it more slowly so each sound is clear",
-    "slow_badge": "0.5×"
+    "slow_badge": "0.5×",
+    "slow_labelled": "0.5× Listen slowly"
   },
   "patternTense": {
     "filter_all": "All",

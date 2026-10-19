@@ -1912,7 +1912,8 @@
     "normal_hint": "Đọc to bằng giọng mẫu",
     "slow": "Nghe chậm",
     "slow_hint": "Đọc to chậm hơn để nghe rõ từng âm",
-    "slow_badge": "0.5×"
+    "slow_badge": "0.5×",
+    "slow_labelled": "0.5× Nghe chậm"
   },
   "patternTense": {
     "filter_all": "Tất cả",

@@ -97,8 +97,8 @@ export function SentenceCard({
               <SampleButton
                 active={playing === 'slow'}
                 disabled={samplesDisabled}
-                icon="hearing"
-                label={playing === 'slow' ? 'Đang phát' : 'Nghe chậm'}
+                icon="volume_up"
+                label={playing === 'slow' ? 'Đang phát' : '0.5× Nghe chậm'}
                 onPress={onPlaySlow}
                 testID="shadowing-play-slow"
                 tone="sun"

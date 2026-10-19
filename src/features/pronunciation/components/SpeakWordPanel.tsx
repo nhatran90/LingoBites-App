@@ -29,6 +29,8 @@ export type SpeakWordPanelProps = {
   target: ReadingTarget;
   /** Back to the card (the take on the device is deleted). */
   onDone: () => void;
+  /** Label of the button that closes after a reading; "Xem lại thẻ". */
+  doneLabel?: string;
   /** Reads text aloud (the screen's TTS); omitted = no listen buttons. */
   onSpeak?: (text: string, rate?: number) => void;
   /** Prefix of the panel's testIDs. */
@@ -49,6 +51,7 @@ export function SpeakWordPanel({
   meaningVi = null,
   target,
   onDone,
+  doneLabel,
   onSpeak,
   testID = 'speak-word',
   deps,
@@ -99,6 +102,7 @@ export function SpeakWordPanel({
       </View>
 
       <Body
+        doneLabel={doneLabel}
         elapsed={elapsed}
         listenModel={listenModel}
         onDone={onDone}
@@ -117,9 +121,11 @@ function Body({
   elapsed,
   listenModel,
   onDone,
+  doneLabel,
   styles,
   testID,
 }: {
+  doneLabel?: string;
   practice: PronunciationPractice;
   sentence: boolean;
   elapsed: number;
@@ -158,6 +164,7 @@ function Body({
           <AppButton
             accessibilityHint={t('pronunciation.declined_agree')}
             onPress={() => practice.answerConsent(true)}
+            testID={`${testID}-declined-agree`}
             title={t('pronunciation.declined_agree')}
             variant="outline"
           />
@@ -252,6 +259,7 @@ function Body({
     case 'scored':
       return (
         <AfterActions
+          doneLabel={doneLabel}
           listenModel={listenModel}
           onDone={onDone}
           practice={practice}
@@ -264,6 +272,7 @@ function Body({
         <View style={styles.block} testID={`${testID}-unscorable`}>
           <AppText>{t(unscorableKey(state.reason))}</AppText>
           <AfterActions
+            doneLabel={doneLabel}
             listenModel={listenModel}
             onDone={onDone}
             practice={practice}
@@ -292,6 +301,7 @@ function Body({
               accessibilityHint={t('pronunciation.check_again_hint')}
               iconLeft="refresh"
               onPress={practice.checkAgain}
+              testID={`${testID}-check-again`}
               title={t('pronunciation.check_again')}
             />
           ) : null}
@@ -299,6 +309,7 @@ function Body({
             cancel
           ) : (
             <AfterActions
+              doneLabel={doneLabel}
               listenModel={listenModel}
               onDone={onDone}
               practice={practice}
@@ -316,9 +327,11 @@ function AfterActions({
   practice,
   listenModel,
   onDone,
+  doneLabel,
   styles,
   testID,
 }: {
+  doneLabel?: string;
   practice: PronunciationPractice;
   listenModel?: () => void;
   onDone: () => void;
@@ -366,7 +379,7 @@ function AfterActions({
         accessibilityHint={t('speakWord.done_hint')}
         onPress={onDone}
         testID={`${testID}-done`}
-        title={t('speakWord.done')}
+        title={doneLabel ?? t('speakWord.done')}
         variant="secondary"
       />
     </View>

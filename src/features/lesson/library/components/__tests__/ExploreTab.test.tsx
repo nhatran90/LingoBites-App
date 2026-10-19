@@ -40,6 +40,7 @@ jest.mock('@features/wordPath', () => ({
   useWordPathRows: () => ({...mockPacks, reload: mockReload}),
   packTitle: (_t: unknown, row: {topic: string | null; position: number}) =>
     row.topic ?? `Gói ${row.position}`,
+  kindSummary: (_t: unknown, counts: {word: number}) => `${counts.word} từ`,
 }));
 
 jest.mock('@features/lesson/player', () => ({
@@ -198,7 +199,9 @@ describe('ExploreTab', () => {
     const card = tree.root
       .findAllByProps({testID: 'library-pack-new'})
       .find(node => node.props.accessibilityLabel);
-    expect(card?.props.accessibilityLabel).toContain('10 từ · A1');
+    expect(card?.props.accessibilityLabel).toBe(
+      'A1. Gói 1. Topic new. Chưa tải. 10 từ. Tải về',
+    );
   });
 
   it('starts the pack stack over after leaving the tab', () => {

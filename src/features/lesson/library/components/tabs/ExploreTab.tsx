@@ -4,13 +4,23 @@ import {useTranslation} from 'react-i18next';
 import {ScrollView, StyleSheet, View} from 'react-native';
 
 import {useCanonicalCatalog} from '@features/lesson/player';
-import {type PackRow, packTitle, useWordPathRows} from '@features/wordPath';
+import {
+  kindSummary,
+  type PackRow,
+  packTitle,
+  useWordPathRows,
+} from '@features/wordPath';
 
 import {AppText} from '@ui/components/AppText';
 import {useFloatingTabBarClearance} from '@ui/components/layout';
 import {formatVideoDuration, splitLessonTitle} from '@ui/components/LessonCard';
 import {topicGlyph} from '@ui/components/LibraryCover';
 import {MaterialIcon} from '@ui/components/MaterialIcon';
+import {
+  PACK_CARD_HEIGHT,
+  PACK_CARD_SHELF_HEIGHT,
+  PackStatusCard,
+} from '@ui/components/PackStatusCard';
 import {type AppTheme, useAppTheme} from '@ui/theme';
 
 import {useAppNavigation} from '@core/navigation';
@@ -122,11 +132,12 @@ export function ExploreTab() {
         <PackStack
           items={shelfPacks(packs.rows ?? [])}
           key={stackKey}
+          cardHeight={PACK_CARD_HEIGHT + PACK_CARD_SHELF_HEIGHT}
           keyOf={row => row.packId}
           moreCount={Math.max(packCount - SHELF_LIMIT, 0)}
           onPastEnd={() => appNavigation.openLibrarySection('wordPath')}
-          renderCard={(row, index, a11y) => (
-            <ToneCard
+          renderCard={(row, _index, a11y) => (
+            <PackStatusCard
               {...a11y}
               accessibilityHint={
                 row.downloaded
@@ -135,22 +146,27 @@ export function ExploreTab() {
               }
               action={packAction(row)}
               cover={{imageUrl: row.coverUrl, glyph: topicGlyph(row.topicCode)}}
-              description={[
-                `${row.total} từ`,
-                row.level,
-                packStatusLabel(t, row),
-              ]
-                .filter(Boolean)
-                .join(' · ')}
+              description={kindSummary(t, row.kindCounts)}
+              eyebrow={
+                row.topic
+                  ? t('wordPath.pack_title', {position: row.position})
+                  : null
+              }
               gutter={theme.spacing.md}
+              learned={row.learned}
+              learnedLabel={t('wordPath.learned_label')}
+              level={row.level}
               onPress={() =>
                 row.downloaded
                   ? appNavigation.openWordPack(row.packId)
                   : appNavigation.openLibrarySection('wordPath')
               }
+              remoteNote={t('wordPath.remote_note')}
+              status={row.status}
+              statusLabel={t(`wordPath.status_${row.status}`)}
               testID={`library-pack-${row.packId}`}
               title={packTitle(t, row)}
-              tone={cardToneAt(index)}
+              total={row.total}
             />
           )}
           testID="library-pack-stack"
@@ -200,16 +216,6 @@ function PatternTenseShelf() {
       />
     </LibraryShelf>
   );
-}
-
-/** "4/12 đã nhớ", "Đã tải, chưa học" or "Chưa tải" under a pack. */
-function packStatusLabel(
-  t: ReturnType<typeof useTranslation>['t'],
-  row: PackRow,
-): string {
-  if (!row.downloaded) return t('wordPath.status_not_downloaded');
-  if (row.learned === 0) return 'Đã tải, chưa học';
-  return t('wordPath.learned_of', {learned: row.learned, total: row.total});
 }
 
 /** The pack's pill: download it, start it, carry on or go over it again. */

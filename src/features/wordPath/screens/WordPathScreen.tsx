@@ -1,20 +1,25 @@
 import React, {useMemo, useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {ScrollView, StyleSheet, View} from 'react-native';
+import {Pressable, ScrollView, StyleSheet, View} from 'react-native';
 
 import {AppButton} from '@ui/components/AppButton';
 import {AppCard} from '@ui/components/AppCard';
+import {AppProgressBar} from '@ui/components/AppProgressBar';
 import {AppScreen} from '@ui/components/AppScreen';
 import {AppTabs} from '@ui/components/AppTabs';
 import {AppText} from '@ui/components/AppText';
 import {topicGlyph} from '@ui/components/LibraryCover';
+import {PackStatusCard} from '@ui/components/PackStatusCard';
 import {ScreenHeader} from '@ui/components/ScreenHeader';
-import {type CardAction, cardToneAt, ToneCard} from '@ui/components/ToneCard';
+import type {CardAction} from '@ui/components/ToneCard';
 import {type AppTheme, useAppTheme} from '@ui/theme';
+import {getStickerEdge} from '@ui/theme/hardShadow';
+import {levelTone} from '@ui/theme/levelColors';
 
 import {useAppNavigation} from '@core/navigation';
 
 import {
+  continuePackOf,
   matchesQuery,
   type PackKind,
   type PackRow,
@@ -49,27 +54,35 @@ const ACTION_GLYPH: Record<PackStatus, CardAction['glyph']> = {
   done: 'check',
 };
 
-/** "Chưa tải", "Đã tải", "4/12 đã nhớ" or "Hoàn thành" under a pack. */
-function statusLabel(t: Translate, row: PackRow): string {
-  return row.status === 'learning'
-    ? t('wordPath.learned_of', {learned: row.learned, total: row.total})
-    : t(`wordPath.status_${row.status}`);
-}
+/** The list's sections, in the order the learner meets them. */
+const SECTION_ORDER: readonly PackStatus[] = [
+  'learning',
+  'ready',
+  'not_downloaded',
+  'done',
+];
+
+/** "4 xong · 1 đang học · 2 đã tải · 9 chưa tải" under a level. */
+const BREAKDOWN_ORDER: readonly PackStatus[] = [
+  'done',
+  'learning',
+  'ready',
+  'not_downloaded',
+];
 
 type PackCardProps = {
   row: PackRow;
-  index: number;
   busy: boolean;
   disabled: boolean;
   onPress: (row: PackRow) => void;
 };
 
-/** A pack drawn like the Library's pack cards. */
-function PackCard({row, index, busy, disabled, onPress}: PackCardProps) {
+/** A pack drawn like the Library's stack cards, coloured by its status. */
+function PackCard({row, busy, disabled, onPress}: PackCardProps) {
   const {theme} = useAppTheme();
   const {t} = useTranslation();
   return (
-    <ToneCard
+    <PackStatusCard
       accessibilityHint={
         row.downloaded ? t('wordPath.open_hint') : t('wordPath.download_hint')
       }
@@ -79,23 +92,129 @@ function PackCard({row, index, busy, disabled, onPress}: PackCardProps) {
         solid: row.downloaded,
       }}
       cover={{imageUrl: row.coverUrl, glyph: topicGlyph(row.topicCode)}}
-      description={[
-        kindSummary(t, row.kindCounts),
-        row.level,
-        statusLabel(t, row),
-      ]
-        .filter(Boolean)
-        .join(' · ')}
+      description={kindSummary(t, row.kindCounts)}
       disabled={disabled}
       eyebrow={
         row.topic ? t('wordPath.pack_title', {position: row.position}) : null
       }
       gutter={theme.spacing.md}
+      learned={row.learned}
+      learnedLabel={t('wordPath.learned_label')}
+      level={row.level}
       onPress={() => onPress(row)}
+      remoteNote={t('wordPath.remote_note')}
+      status={row.status}
+      statusLabel={t(`wordPath.status_${row.status}`)}
       testID={`word-path-pack-${row.packId}`}
       title={packTitle(t, row)}
-      tone={cardToneAt(index)}
+      total={row.total}
     />
+  );
+}
+
+type LevelPickerProps = {
+  levels: readonly string[];
+  rows: readonly PackRow[];
+  value: string;
+  onChange: (level: string) => void;
+};
+
+/** One button per CEFR level, in its colour, with how many packs are done. */
+function LevelPicker({levels, rows, value, onChange}: LevelPickerProps) {
+  const {theme} = useAppTheme();
+  const {t} = useTranslation();
+  const themedStyles = useMemo(() => makeStyles(theme), [theme]);
+  return (
+    <ScrollView
+      contentContainerStyle={styles.levelPicker}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      testID="word-path-levels"
+    >
+      {levels.map(level => {
+        const tone = levelTone(theme, level);
+        const inLevel = rows.filter(row => row.level === level);
+        const done = inLevel.filter(row => row.status === 'done').length;
+        const selected = level === value;
+        return (
+          <Pressable
+            accessibilityHint={t('wordPath.level_pick_hint')}
+            accessibilityLabel={`${level} ${t(`wordPath.level_${level}`, {
+              defaultValue: '',
+            })}. ${t('wordPath.level_done', {done, total: inLevel.length})}`}
+            accessibilityRole="button"
+            accessibilityState={{selected}}
+            key={level}
+            onPress={() => onChange(level)}
+            style={[
+              themedStyles.levelButton,
+              selected
+                ? [
+                    styles.levelButtonOn,
+                    getStickerEdge(3, tone.strong),
+                    {borderColor: tone.strong},
+                  ]
+                : null,
+            ]}
+            testID={`word-path-level-tab-${level}`}
+          >
+            <View style={[styles.levelChip, {backgroundColor: tone.strong}]}>
+              <AppText style={[styles.levelChipText, {color: tone.on}]}>
+                {level}
+              </AppText>
+            </View>
+            <AppText color="secondary" style={styles.levelCount}>
+              {`${done}/${inLevel.length}`}
+            </AppText>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+/** A level's name, what its packs are at, and the app's progress bar. */
+function LevelSummary({level, rows}: {level: string; rows: PackRow[]}) {
+  const {theme} = useAppTheme();
+  const {t} = useTranslation();
+  const themedStyles = useMemo(() => makeStyles(theme), [theme]);
+  const tone = levelTone(theme, level);
+  const countOf = (status: PackStatus) =>
+    rows.filter(row => row.status === status).length;
+  const done = countOf('done');
+  const learning = countOf('learning');
+  const breakdown = BREAKDOWN_ORDER.filter(status => countOf(status) > 0)
+    .map(status => t(`wordPath.count_${status}`, {count: countOf(status)}))
+    .join(' · ');
+  return (
+    <View style={themedStyles.levelSummary}>
+      <View style={styles.levelSummaryHead}>
+        <View style={[styles.levelBadge, {backgroundColor: tone.strong}]}>
+          <AppText style={[styles.levelBadgeText, {color: tone.on}]}>
+            {level}
+          </AppText>
+        </View>
+        <View style={styles.levelSummaryText}>
+          <AppText variant="h3">
+            {t(`wordPath.level_${level}`, {defaultValue: level})}
+          </AppText>
+          <AppText color="secondary" variant="caption">
+            {breakdown}
+          </AppText>
+        </View>
+      </View>
+      <AppProgressBar
+        accessibilityValue={{
+          text: t('wordPath.level_done', {done, total: rows.length}),
+        }}
+        count={`${done}/${rows.length}`}
+        current={learning > 0 ? done : undefined}
+        done={done}
+        surface="card"
+        testID={`word-path-level-progress-${level}`}
+        total={rows.length}
+      />
+    </View>
   );
 }
 
@@ -139,6 +258,7 @@ export function WordPathList({query = ''}: {query?: string}) {
   const [busy, setBusy] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [kind, setKind] = useState<PackKind>('word');
+  const [level, setLevel] = useState<string | null>(null);
 
   /** Opens a pack on the device; downloads it first when it is not. */
   const openPack = async (row: PackRow) => {
@@ -168,7 +288,17 @@ export function WordPathList({query = ''}: {query?: string}) {
   };
   const ofKind = rows.filter(row => row.kind === kind);
   const shown = ofKind.filter(row => matchesQuery(row, needle));
-  const levels = [...new Set(shown.map(row => row.level))];
+  const allLevels = [...new Set(ofKind.map(row => row.level))];
+  const pickedLevel =
+    level !== null && allLevels.includes(level)
+      ? level
+      : (continuePackOf(ofKind)?.level ?? allLevels[0] ?? null);
+  // A search looks through every level; otherwise only the picked one shows.
+  const levels = needle
+    ? [...new Set(shown.map(row => row.level))]
+    : pickedLevel !== null
+      ? [pickedLevel]
+      : [];
 
   return (
     <ScrollView contentContainerStyle={themedStyles.container}>
@@ -184,6 +314,14 @@ export function WordPathList({query = ''}: {query?: string}) {
       ) : (
         <>
           <KindTabs counts={counts} kind={kind} onChange={setKind} />
+          {!needle && allLevels.length > 1 && pickedLevel !== null ? (
+            <LevelPicker
+              levels={allLevels}
+              onChange={setLevel}
+              rows={ofKind}
+              value={pickedLevel}
+            />
+          ) : null}
           {ofKind.length === 0 ? (
             <AppCard testID={`word-path-empty-${kind}`}>
               <AppText color="secondary">
@@ -198,35 +336,52 @@ export function WordPathList({query = ''}: {query?: string}) {
               {t('wordPath.no_match')}
             </AppText>
           ) : null}
-          {levels.map(level => {
-            const inLevel = shown.filter(row => row.level === level);
-            const done = inLevel.filter(row => row.status === 'done').length;
+          {levels.map(shownLevel => {
+            const inLevel = shown.filter(row => row.level === shownLevel);
             return (
               <View
-                key={level}
+                key={shownLevel}
                 style={styles.levelGroup}
-                testID={`word-path-level-${level}`}
+                testID={`word-path-level-${shownLevel}`}
               >
-                <View style={styles.levelHeader}>
-                  <AppText variant="h3">
-                    {`${level} · ${t(`wordPath.level_${level}`, {
-                      defaultValue: '',
-                    })}`}
-                  </AppText>
-                  <AppText color="secondary" variant="caption">
-                    {t('wordPath.level_done', {done, total: inLevel.length})}
-                  </AppText>
-                </View>
-                {inLevel.map((row, index) => (
-                  <PackCard
-                    busy={busy === row.packId}
-                    disabled={busy !== null}
-                    index={index}
-                    key={row.packId}
-                    onPress={openPack}
-                    row={row}
-                  />
-                ))}
+                <LevelSummary level={shownLevel} rows={inLevel} />
+                {SECTION_ORDER.map(status => {
+                  const inSection = inLevel
+                    .filter(row => row.status === status)
+                    .sort((a, b) => a.position - b.position);
+                  if (inSection.length === 0) return null;
+                  const hint =
+                    status === 'ready' || status === 'not_downloaded'
+                      ? t(`wordPath.section_${status}_hint`)
+                      : null;
+                  return (
+                    <View
+                      key={status}
+                      style={styles.section}
+                      testID={`word-path-section-${shownLevel}-${status}`}
+                    >
+                      <View style={styles.sectionHeader}>
+                        <AppText variant="h3">
+                          {t(`wordPath.section_${status}`)}
+                        </AppText>
+                        {hint ? (
+                          <AppText color="secondary" variant="caption">
+                            {hint}
+                          </AppText>
+                        ) : null}
+                      </View>
+                      {inSection.map(row => (
+                        <PackCard
+                          busy={busy === row.packId}
+                          disabled={busy !== null}
+                          key={row.packId}
+                          onPress={openPack}
+                          row={row}
+                        />
+                      ))}
+                    </View>
+                  );
+                })}
               </View>
             );
           })}
@@ -270,17 +425,79 @@ function makeStyles(theme: AppTheme) {
       gap: theme.spacing.md,
       padding: theme.spacing.md,
     },
+    levelButton: {
+      alignItems: 'center',
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      flexDirection: 'row',
+      gap: 6,
+      minHeight: 48,
+      paddingHorizontal: 12,
+      ...getStickerEdge(3, theme.colors.surfaceHigh),
+    },
+    levelSummary: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 20,
+      gap: 10,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      ...getStickerEdge(3, theme.colors.surfaceHigh),
+    },
   });
 }
 
 const styles = StyleSheet.create({
-  levelGroup: {
-    gap: 12,
+  levelButtonOn: {
+    borderWidth: 2,
   },
-  levelHeader: {
+  levelGroup: {
+    gap: 18,
+  },
+  levelPicker: {
+    gap: 8,
+    paddingBottom: 4,
+  },
+  levelChip: {
+    alignItems: 'center',
+    borderRadius: 8,
+    height: 28,
+    justifyContent: 'center',
+    width: 28,
+  },
+  levelChipText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  levelCount: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  levelSummaryHead: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+  },
+  levelBadge: {
+    alignItems: 'center',
+    borderRadius: 12,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
+  },
+  levelBadgeText: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  levelSummaryText: {
+    flex: 1,
+    gap: 2,
+  },
+  section: {
+    gap: 14,
+  },
+  sectionHeader: {
     alignItems: 'baseline',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingTop: 4,
   },
 });

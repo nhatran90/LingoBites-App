@@ -286,8 +286,7 @@
     "remembered_hint": "schedule review later",
     "reveal_label": "Show meaning",
     "reveal_a11y": "Show meaning",
-    "reveal_hint": "Flip the card to see the meaning and rate it",
-    "reveal_tip": "Try to recall the meaning before you flip"
+    "reveal_hint": "Flip the card to see the meaning and rate it"
   },
   "common": {
     "retry": "Retry",

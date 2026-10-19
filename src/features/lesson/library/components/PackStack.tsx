@@ -40,6 +40,8 @@ export interface PackStackProps<T> {
   onPastEnd: () => void;
   /** Items left out of the stack, shown as "+29" after the dots. */
   moreCount?: number;
+  /** Height of one card with its shelf; defaults to a tone card's. */
+  cardHeight?: number;
   testID?: string;
 }
 
@@ -56,6 +58,7 @@ export function PackStack<T>({
   renderCard,
   onPastEnd,
   moreCount = 0,
+  cardHeight = CARD_HEIGHT + CARD_SHELF_HEIGHT,
   testID = 'pack-stack',
 }: PackStackProps<T>) {
   const {theme} = useAppTheme();
@@ -197,7 +200,7 @@ export function PackStack<T>({
       <View
         {...panResponder.panHandlers}
         onLayout={event => setStackWidth(event.nativeEvent.layout.width)}
-        style={{height: CARD_HEIGHT + CARD_SHELF_HEIGHT + peeking * PEEK}}
+        style={{height: cardHeight + peeking * PEEK}}
         testID={`${testID}-cards`}
       >
         {/* Drawn last to first, so the earlier cards sit on top. */}

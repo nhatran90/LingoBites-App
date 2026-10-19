@@ -13,4 +13,4 @@ export {WordPackScreen} from './screens/WordPackScreen';
 export {WordPathList, WordPathScreen} from './screens/WordPathScreen';
 export {useWordPathRows} from './logic/useWordPathRows';
 export type {PackRow} from './logic/packRows';
-export {packTitle} from './screens/packText';
+export {kindSummary, packTitle} from './screens/packText';

@@ -126,9 +126,51 @@ describe('WordPathList', () => {
     expect(has(tree, `word-path-pack-${WORD_PACK}`)).toBe(true);
     expect(has(tree, `word-path-pack-${SENTENCE_PACK}`)).toBe(false);
     expect(textOf(tree, `word-path-pack-${WORD_PACK}-description`)).toBe(
-      '12 từ · A1 · Chưa tải',
+      '12 từ',
     );
+    expect(textOf(tree, `word-path-pack-${WORD_PACK}-level`)).toBe('A1');
+    expect(textOf(tree, `word-path-pack-${WORD_PACK}-status`)).toBe('CHƯA TẢI');
+    expect(has(tree, `word-path-section-A1-not_downloaded`)).toBe(true);
     expect(has(tree, 'word-path-next')).toBe(false);
+  });
+
+  it('shows one level at a time, picked from the level buttons', async () => {
+    const A2_PACK = '00000000-0000-4000-8000-00000000000c';
+    mockPath.mockResolvedValue({
+      ok: true,
+      value: {
+        ...path,
+        levels: [
+          ...path.levels,
+          {
+            cefr_level: 'A2',
+            topics: [
+              {
+                topic_code: null,
+                title_vi: 'chung',
+                packs: [
+                  {
+                    id: A2_PACK,
+                    position: 1,
+                    title_vi: 'Gói A2 · chung 1',
+                    item_count: 8,
+                    kind_counts: {word: 8, phrase: 0, pattern: 0, grammar: 0},
+                    preview: [],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+    const tree = await renderList();
+    expect(has(tree, 'word-path-level-A1')).toBe(true);
+    expect(has(tree, 'word-path-level-A2')).toBe(false);
+    expect(textOf(tree, 'word-path-level-tab-A2')).toBe('A20/1');
+    press(tree, 'word-path-level-tab-A2');
+    expect(has(tree, 'word-path-level-A1')).toBe(false);
+    expect(has(tree, `word-path-pack-${A2_PACK}`)).toBe(true);
   });
 
   it('switches to sentence packs', async () => {
@@ -179,9 +221,8 @@ describe('WordPathList', () => {
       },
     ]);
     const tree = await renderList();
-    expect(textOf(tree, `word-path-pack-${WORD_PACK}-description`)).toContain(
-      'Đã tải',
-    );
+    expect(textOf(tree, `word-path-pack-${WORD_PACK}-status`)).toBe('ĐÃ TẢI');
+    expect(has(tree, `word-path-section-A1-ready`)).toBe(true);
     press(tree, `word-path-pack-${WORD_PACK}`);
     expect(mockPack).not.toHaveBeenCalled();
     expect(mockAppNavigation.openWordPack).toHaveBeenCalledWith(WORD_PACK);

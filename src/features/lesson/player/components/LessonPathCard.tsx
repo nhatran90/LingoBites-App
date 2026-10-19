@@ -1,10 +1,10 @@
 /**
  * LessonPathCard — "Lộ trình" on the lesson hub: the lesson flow's parts as
- * a row of dots (done, current, still to do) with their names underneath,
- * and what comes next.
+ * a row of step pictures (done, current, still to do; the same pictures as
+ * the lesson map) with their names underneath, and what comes next.
  *
- *   (✓)━━(2)──(3)──(4)──(5)──(6)
- *   Ôn  Nghe hiểu  Luyện …
+ *   (👂)━━(🎤)──(⇄)──(🗣)──[🏆]
+ *   Nghe hiểu  Luyện …
  *   [ Tiếp theo: Nghe hiểu · 3 hoạt động ]
  */
 import React, {useMemo} from 'react';
@@ -12,14 +12,19 @@ import {useTranslation} from 'react-i18next';
 import {Pressable, StyleSheet, View} from 'react-native';
 
 import {AppText} from '@ui/components/AppText';
+import {MaterialIcon} from '@ui/components/MaterialIcon';
+import type {HandoffIconName} from '@ui/icons/iconRegistry';
 import {type AppTheme, useAppTheme} from '@ui/theme';
 import {getStickerFace} from '@ui/theme/hardShadow';
-import {HERO_PALETTE} from '@ui/theme/heroPalette';
 
 export type LessonPathStep = {
   step: number;
-  /** Short name under the dot, e.g. "Nghe hiểu". */
+  /** Short name under the picture, e.g. "Nghe hiểu". */
   label: string;
+  /** The step's picture, as on the lesson map. */
+  icon: HandoffIconName;
+  /** The last part (results): drawn as a gold tile, as on the map. */
+  last?: boolean;
 };
 
 type Props = {
@@ -27,7 +32,7 @@ type Props = {
   steps: LessonPathStep[];
   /** The part the learner is on; every earlier part counts as done. */
   current: number;
-  /** Every part is done: all dots filled, no "next" line. */
+  /** Every part is done: all pictures filled, no "next" line. */
   finished: boolean;
   /** Activities in the current part; 0 hides the count. */
   nextActivities: number;
@@ -88,6 +93,7 @@ export function LessonPathCard({
                 <View
                   style={[
                     styles.dot,
+                    item.last && !done && !now ? styles.dotLast : null,
                     done ? styles.dotDone : null,
                     now ? styles.dotNow : null,
                   ]}
@@ -95,14 +101,17 @@ export function LessonPathCard({
                     done ? '-done' : now ? '-current' : ''
                   }`}
                 >
-                  <AppText
-                    style={[
-                      styles.dotText,
-                      done || now ? styles.dotTextOn : null,
-                    ]}
-                  >
-                    {done ? '✓' : index + 1}
-                  </AppText>
+                  <MaterialIcon
+                    color={
+                      done
+                        ? theme.colors.text.inverse
+                        : now
+                          ? theme.colors.accentInk
+                          : theme.colors.text.muted
+                    }
+                    name={item.icon}
+                    size={22}
+                  />
                 </View>
               </React.Fragment>
             );
@@ -158,7 +167,7 @@ export function LessonPathCard({
   );
 }
 
-const DOT = 30;
+const DOT = 44;
 
 function makeStyles(theme: AppTheme) {
   return StyleSheet.create({
@@ -183,7 +192,7 @@ function makeStyles(theme: AppTheme) {
     },
     dot: {
       alignItems: 'center',
-      backgroundColor: theme.colors.surfaceContainer,
+      backgroundColor: theme.colors.surface,
       borderColor: theme.colors.outlineVariant,
       borderRadius: DOT / 2,
       borderWidth: 2,
@@ -195,18 +204,14 @@ function makeStyles(theme: AppTheme) {
       backgroundColor: theme.colors.primary,
       borderColor: theme.colors.primary,
     },
+    dotLast: {
+      backgroundColor: theme.colors.tertiaryFixed,
+      borderRadius: 14,
+    },
     dotNow: {
-      backgroundColor: HERO_PALETTE.coral,
-      borderColor: HERO_PALETTE.coralRing,
+      backgroundColor: theme.colors.accent,
+      borderColor: theme.colors.accentSoft,
       borderWidth: 4,
-    },
-    dotText: {
-      color: theme.colors.text.muted,
-      fontSize: 13,
-      fontWeight: '800',
-    },
-    dotTextOn: {
-      color: HERO_PALETTE.white,
     },
     link: {
       backgroundColor: theme.colors.outlineVariant,
@@ -230,7 +235,7 @@ function makeStyles(theme: AppTheme) {
       textAlign: 'center',
     },
     labelNow: {
-      color: HERO_PALETTE.coralShelf,
+      color: theme.colors.primary,
     },
     next: {
       backgroundColor: theme.colors.secondarySoft,

@@ -6,6 +6,7 @@ import Animated from 'react-native-reanimated';
 import {AppButton} from '@ui/components/AppButton';
 import {AppCard} from '@ui/components/AppCard';
 import {AppText} from '@ui/components/AppText';
+import type {HeroScrollHandler} from '@ui/components/CurriculumHeroChrome';
 import {
   GRID_TILE_GAP,
   GridTile,
@@ -21,8 +22,6 @@ import {
   skeletonRevealEntering,
 } from '@ui/components/Skeleton';
 import {type AppTheme, useAppTheme} from '@ui/theme';
-
-import type {HeroScrollHandler} from './CurriculumHeroChrome';
 
 export type CurriculumRow = {
   id: string;

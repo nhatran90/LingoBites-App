@@ -79,8 +79,11 @@ export type LessonUnitTarget = {
 export interface AppNavigation {
   /** Open one lesson in the lesson player. */
   openLesson(lessonId: string): void;
-  /** Open a curriculum lesson's six-step player (PR 10). */
-  openLessonFlow(lessonId: string): void;
+  /**
+   * Open a curriculum lesson's six-step player (PR 10) at the step to do.
+   * `showMap` opens the lesson map ("Lộ trình") first instead.
+   */
+  openLessonFlow(lessonId: string, options?: {showMap?: boolean}): void;
   /**
    * Close the lesson: remove the lesson player and its six-step player in
    * one go and return to the screen that opened the lesson.

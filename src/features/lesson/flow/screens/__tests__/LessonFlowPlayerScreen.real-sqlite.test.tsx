@@ -46,12 +46,12 @@ jest.mock('../../../player/logic/useCanonicalLesson', () => ({
   }),
 }));
 
-function renderScreen() {
-  const navigation = {goBack: jest.fn()};
+function renderScreen(params: {showMap?: boolean} = {}) {
+  const navigation = {goBack: jest.fn(), canGoBack: () => true};
   const tree = renderWithTheme(
     <LessonFlowPlayerScreen
       navigation={navigation as never}
-      route={{params: {lessonId: snapshot.id}} as never}
+      route={{params: {lessonId: snapshot.id, ...params}} as never}
     />,
   );
   return {tree, navigation};
@@ -69,8 +69,22 @@ afterEach(() => {
 });
 
 describe('LessonFlowPlayerScreen (shell)', () => {
-  it('opens a new lesson on its map, past an empty step 1, and walks the steps', () => {
+  it('opens straight on the step to do, past an empty step 1', () => {
     const {tree} = renderScreen();
+    expect(has(tree, 'lesson-flow-map')).toBe(false);
+    expect(textOf(tree, 'lesson-flow-step-title')).toBe('Nghe hiểu');
+  });
+
+  it('opens on the map from "Xem chi tiết" and goes back to the lesson', () => {
+    const {tree, navigation} = renderScreen({showMap: true});
+    expect(has(tree, 'lesson-flow-map')).toBe(true);
+    expect(has(tree, 'lesson-flow-close')).toBe(false);
+    press(tree, 'screen-header-back');
+    expect(navigation.goBack).toHaveBeenCalled();
+  });
+
+  it('opens on the map, past an empty step 1, and walks the steps', () => {
+    const {tree} = renderScreen({showMap: true});
     expect(has(tree, 'lesson-flow-map')).toBe(true);
     expect(has(tree, 'lesson-flow-step-title')).toBe(false);
 
@@ -105,7 +119,7 @@ describe('LessonFlowPlayerScreen (shell)', () => {
   });
 
   it('opens a step straight from a stop on the map', () => {
-    const {tree} = renderScreen();
+    const {tree} = renderScreen({showMap: true});
     press(tree, 'lesson-flow-step-4');
     expect(has(tree, 'lesson-flow-map')).toBe(false);
     expect(textOf(tree, 'lesson-flow-step-title')).toBe('Luyện biến đổi');

@@ -688,6 +688,7 @@
     "path_done": "You finished the path",
     "path_a11y": "Learning path: {{done}} of {{total}} parts done",
     "path_review_skipped": "Nothing to review yet — straight to the new lesson.",
+    "path_ring_caption": "steps",
     "content_title": "Words & lesson text",
     "tab_words": "Words · {{count}}",
     "tab_sentences": "Text · {{count}} sentences",

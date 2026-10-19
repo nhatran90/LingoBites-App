@@ -1,13 +1,16 @@
 import React, {useMemo, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Pressable, StyleSheet, View} from 'react-native';
+import type {SharedValue} from 'react-native-reanimated';
 
 import {trackEvent} from '@features/analytics';
 
 import {AppCard} from '@ui/components/AppCard';
 import {AppText} from '@ui/components/AppText';
 import {Chip} from '@ui/components/Chip';
+import {CurriculumHeroCover} from '@ui/components/CurriculumHeroCover';
 import {LessonExploreRow} from '@ui/components/LessonExploreRow';
+import {ProgressRing} from '@ui/components/ProgressRing';
 import {SectionHeader} from '@ui/components/SectionHeader';
 import type {HandoffIconName} from '@ui/icons/iconRegistry';
 import {type AppTheme, useAppTheme} from '@ui/theme';
@@ -15,6 +18,7 @@ import {type AppTheme, useAppTheme} from '@ui/theme';
 import {buildPracticeSource, getPracticeEligibility} from '@core/learning';
 import type {LessonAnalysis, LessonSnapshot} from '@core/schemas/lesson';
 
+import {FLOW_STEP_ICONS} from '../../flow/components/LessonMap';
 import {blocksOfStep, FLOW_STEPS} from '../../flow/logic/practiceCompletion';
 import type {FlowEntry} from '../../flow/logic/useFlowEntry';
 import {
@@ -130,6 +134,13 @@ export type CanonicalLessonHubProps = {
   flowEntry?: FlowEntry;
   /** Opens the lesson flow; omitted hides "Lộ trình". */
   onOpenFlow?: () => void;
+  /**
+   * The screen's scroll offset. Given, a curriculum lesson opens on its
+   * cover picture edge to edge, as its course and unit do.
+   */
+  scrollY?: SharedValue<number>;
+  /** The lesson's media download card, shown under the header. */
+  mediaCard?: React.ReactNode;
 };
 
 /**
@@ -152,6 +163,8 @@ export function CanonicalLessonHub({
   onSpeakText,
   flowEntry,
   onOpenFlow,
+  scrollY,
+  mediaCard,
 }: CanonicalLessonHubProps) {
   const {theme} = useAppTheme();
   const {t} = useTranslation();
@@ -203,10 +216,17 @@ export function CanonicalLessonHub({
     // Step 1 with nothing to review is left out, not shown as skipped.
     const firstStep = flowEntry.reviewSkipped ? 2 : 1;
     const current = flowEntry.resumeAt ?? firstStep;
+    const shown = FLOW_STEPS.filter(step => step >= firstStep);
     return {
+      doneCount:
+        current === 6
+          ? shown.length
+          : shown.filter(step => step < current).length,
       steps: FLOW_STEPS.filter(step => step >= firstStep).map(step => ({
         step,
         label: t(`lessonFlow.step_${step}`),
+        icon: FLOW_STEP_ICONS[step],
+        last: step === 6,
       })),
       current,
       finished: current === 6,
@@ -216,6 +236,12 @@ export function CanonicalLessonHub({
       ).length,
     };
   }, [flowEntry, onOpenFlow, snapshot, t]);
+  const coverHero = scrollY !== undefined && curriculumLesson;
+  // The goal card says what the lesson is for; the description would repeat it.
+  const description =
+    snapshot.description.trim().length > 0 && !outcome
+      ? snapshot.description
+      : null;
   const meta: LessonHeroMeta[] = [
     ...(outcome?.estimatedMinutes
       ? [
@@ -269,29 +295,50 @@ export function CanonicalLessonHub({
 
   return (
     <View testID="canonical-lesson-hub" style={styles.container}>
-      <LessonStatusBanners offline={offline} hasUpdate={hasUpdate} />
-      <SourcePhotoCard
-        items={(snapshot.lesson_items ?? []).map(entry => entry.item)}
-        lessonId={snapshot.id}
-        offline={offline ?? false}
-      />
-
-      <View style={styles.header}>
-        <LessonHeroCard
-          description={
-            snapshot.description.trim().length > 0 ? snapshot.description : null
-          }
-          eyebrow={
-            snapshot.unit?.level_title ??
-            (snapshot.origin === 'learner' ? t('lessonPlayer.hero_mine') : null)
-          }
+      {coverHero ? (
+        <CurriculumHeroCover
           glyph="book"
-          imageUrl={curriculumLesson ? pictures.coverUrl : null}
-          meta={meta}
-          title={snapshot.title}
-        />
-        {chips.length > 0 ? (
+          imageUrl={pictures.coverUrl}
+          level={snapshot.spec?.code?.split('-')[0] ?? null}
+          scrollY={scrollY}
+          testID="canonical-hub-cover"
+        >
+          <View style={styles.titleRow}>
+            <View style={styles.titleCopy}>
+              <AppText
+                numberOfLines={1}
+                style={themedStyles.crumb}
+                variant="caption"
+              >
+                {snapshot.unit!.unit_title}
+              </AppText>
+              <AppText testID="canonical-hub-title" variant="h1">
+                {snapshot.title}
+              </AppText>
+              {snapshot.unit!.level_title ? (
+                <AppText color="secondary" variant="label">
+                  {snapshot.unit!.level_title}
+                </AppText>
+              ) : null}
+            </View>
+            {path ? (
+              <ProgressRing
+                accessibilityLabel={t('lessonPlayer.path_a11y', {
+                  done: path.doneCount,
+                  total: path.steps.length,
+                })}
+                caption={t('lessonPlayer.path_ring_caption')}
+                progress={path.doneCount / Math.max(path.steps.length, 1)}
+                size={68}
+                testID="canonical-hub-progress"
+                value={`${path.doneCount}/${path.steps.length}`}
+              />
+            ) : null}
+          </View>
           <View style={styles.chips}>
+            {meta.map(item => (
+              <Chip key={item.label} label={item.label} />
+            ))}
             {chips.map(chip => (
               <Chip
                 key={chip.key}
@@ -301,22 +348,64 @@ export function CanonicalLessonHub({
               />
             ))}
           </View>
-        ) : null}
-        {snapshot.generated &&
-        snapshot.derived_from_lesson_id &&
-        onOpenLesson ? (
-          <Pressable
-            accessibilityHint={t('compose.source_link_hint')}
-            accessibilityRole="link"
-            onPress={() => onOpenLesson(snapshot.derived_from_lesson_id!)}
-            testID="canonical-hub-source-lesson"
-          >
-            <AppText style={themedStyles.expandLabel} variant="label">
-              {`${t('compose.source_link')} →`}
+          {description ? (
+            <AppText color="secondary" testID="canonical-hub-description">
+              {description}
             </AppText>
-          </Pressable>
-        ) : null}
-      </View>
+          ) : null}
+        </CurriculumHeroCover>
+      ) : null}
+      {mediaCard}
+      <LessonStatusBanners offline={offline} hasUpdate={hasUpdate} />
+      <SourcePhotoCard
+        items={(snapshot.lesson_items ?? []).map(entry => entry.item)}
+        lessonId={snapshot.id}
+        offline={offline ?? false}
+      />
+
+      {coverHero ? null : (
+        <View style={styles.header}>
+          <LessonHeroCard
+            description={description}
+            eyebrow={
+              snapshot.unit?.level_title ??
+              (snapshot.origin === 'learner'
+                ? t('lessonPlayer.hero_mine')
+                : null)
+            }
+            glyph="book"
+            imageUrl={curriculumLesson ? pictures.coverUrl : null}
+            meta={meta}
+            title={snapshot.title}
+          />
+          {chips.length > 0 ? (
+            <View style={styles.chips}>
+              {chips.map(chip => (
+                <Chip
+                  key={chip.key}
+                  label={chip.label}
+                  testID={chip.testID}
+                  tone={chip.tone}
+                />
+              ))}
+            </View>
+          ) : null}
+          {snapshot.generated &&
+          snapshot.derived_from_lesson_id &&
+          onOpenLesson ? (
+            <Pressable
+              accessibilityHint={t('compose.source_link_hint')}
+              accessibilityRole="link"
+              onPress={() => onOpenLesson(snapshot.derived_from_lesson_id!)}
+              testID="canonical-hub-source-lesson"
+            >
+              <AppText style={themedStyles.expandLabel} variant="label">
+                {`${t('compose.source_link')} →`}
+              </AppText>
+            </Pressable>
+          ) : null}
+        </View>
+      )}
 
       {outcome ? (
         <View>
@@ -488,6 +577,10 @@ function makeStyles(theme: AppTheme) {
     expandLabel: {
       color: theme.colors.primary,
     },
+    crumb: {
+      color: theme.colors.primary,
+      fontWeight: theme.typography.weight.bold,
+    },
   });
 }
 
@@ -505,5 +598,14 @@ const styles = StyleSheet.create({
   },
   header: {
     gap: 8,
+  },
+  titleCopy: {
+    flex: 1,
+    gap: 4,
+  },
+  titleRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 12,
   },
 });

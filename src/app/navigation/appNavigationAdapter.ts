@@ -244,7 +244,8 @@ export function createAppNavigation(
 
   return {
     openLesson: lessonId => navigate('CanonicalLessonPlayer', {lessonId}),
-    openLessonFlow: lessonId => navigate('LessonFlowPlayer', {lessonId}),
+    openLessonFlow: (lessonId, options) =>
+      navigate('LessonFlowPlayer', {lessonId, showMap: options?.showMap}),
     closeLesson: () => replaceLessonRoutes([]),
     closeLessonToUnit,
     openNextUnitLesson,

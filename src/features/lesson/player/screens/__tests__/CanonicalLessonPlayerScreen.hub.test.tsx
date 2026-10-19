@@ -520,6 +520,24 @@ describe('CanonicalLessonPlayerScreen lesson hub', () => {
     });
   });
 
+  it('opens a curriculum lesson on its cover, without repeating the goal', () => {
+    mockState = ready({
+      ...seedSnapshot(),
+      description: 'Gọi một đồ uống.',
+    });
+    const {tree, navigation} = renderScreen();
+    expect(has(tree, 'canonical-hub-cover')).toBe(true);
+    expect(has(tree, 'canonical-hub-title')).toBe(true);
+    expect(has(tree, 'canonical-hub-progress')).toBe(true);
+    // The goal card says what the lesson is for; the description is left out.
+    expect(has(tree, 'lesson-outcome-card')).toBe(true);
+    expect(has(tree, 'canonical-hub-description')).toBe(false);
+    act(() => {
+      pressable(tree, 'screen-header-back').props.onPress();
+    });
+    expect(navigation.goBack).toHaveBeenCalled();
+  });
+
   it('starts the six-step player for a curriculum lesson (PR 10)', () => {
     mockState = {
       status: 'ready',
@@ -542,10 +560,16 @@ describe('CanonicalLessonPlayerScreen lesson hub', () => {
     act(() => {
       pressable(tree, 'canonical-hub-start-flow').props.onPress();
     });
-    expect(mockAppNavigation.openLessonFlow).toHaveBeenCalledWith(LESSON_ID);
+    // "Bắt đầu" goes straight into the step; "Xem chi tiết" opens the map.
+    expect(mockAppNavigation.openLessonFlow).toHaveBeenLastCalledWith(
+      LESSON_ID,
+    );
     act(() => {
       pressable(tree, 'lesson-path-details').props.onPress();
     });
-    expect(mockAppNavigation.openLessonFlow).toHaveBeenCalledTimes(2);
+    expect(mockAppNavigation.openLessonFlow).toHaveBeenLastCalledWith(
+      LESSON_ID,
+      {showMap: true},
+    );
   });
 });

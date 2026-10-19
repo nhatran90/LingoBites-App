@@ -44,6 +44,8 @@ type Props = {
    */
   scrollY: SharedValue<number>;
   backLabel?: string;
+  /** Shown at the top right over the picture, e.g. the streak. */
+  rightAccessory?: React.ReactNode;
 };
 
 /**
@@ -55,6 +57,7 @@ export function CurriculumHeroChrome({
   onBack,
   scrollY,
   backLabel = 'Quay lại',
+  rightAccessory,
 }: Props) {
   const {theme} = useAppTheme();
   const themedStyles = useMemo(() => makeStyles(theme), [theme]);
@@ -89,6 +92,11 @@ export function CurriculumHeroChrome({
           testID="screen-header-back"
         />
       </View>
+      {rightAccessory ? (
+        <View style={[themedStyles.right, {top: topInset + 8}]}>
+          {rightAccessory}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -98,6 +106,10 @@ function makeStyles(theme: AppTheme) {
     back: {
       left: theme.gutter,
       position: 'absolute',
+    },
+    right: {
+      position: 'absolute',
+      right: theme.gutter,
     },
     bar: {
       backgroundColor: theme.colors.background,

@@ -102,6 +102,23 @@ describe('recordingClient', () => {
     );
   });
 
+  it('sends a Blob typed as the upload MIME (expo/fetch uses the Blob type)', async () => {
+    mockedConfig.mockReturnValue({apiBaseUrl: 'https://api.lingobites.app'});
+    mockedAuthFetch.mockResolvedValueOnce({ok: true, status: 200});
+
+    const fileBlob = new Blob(['12345678']).slice(0, 8, 'audio/x-m4a');
+    const result = await uploadRecordingBinary(
+      '/v1/recordings/rec-1/content',
+      RECORDING_UPLOAD_MIME,
+      fileBlob,
+    );
+
+    expect(result.ok).toBe(true);
+    const sent = mockedAuthFetch.mock.calls[0][1].body as Blob;
+    expect(sent.type).toBe(RECORDING_UPLOAD_MIME);
+    expect(sent.size).toBe(8);
+  });
+
   it('marks 400 create failures as non-retryable', async () => {
     mockedAuthFetch.mockResolvedValue({
       ok: false,

@@ -250,6 +250,14 @@ export async function uploadRecordingBinary(
 
   const timeout = createTimeoutSignal(60000, options.signal);
   const signal = timeout.signal;
+  // The global fetch is expo/fetch, which sends a Blob body with the Blob's
+  // own type as Content-Type, over the header below. A file read on iOS has
+  // a type other than `audio/mp4`, which the Server refuses
+  // (RECORDING_MIME_MISMATCH), so the Blob is given the upload type.
+  const body =
+    binaryData instanceof Blob && binaryData.type !== contentType
+      ? binaryData.slice(0, binaryData.size, contentType)
+      : binaryData;
 
   try {
     const response = await authenticatedFetch(
@@ -259,7 +267,7 @@ export async function uploadRecordingBinary(
         headers: {
           'Content-Type': contentType,
         },
-        body: binaryData,
+        body,
         signal,
       },
       options.fetchImpl,

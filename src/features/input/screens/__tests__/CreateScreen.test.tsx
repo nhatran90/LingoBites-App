@@ -149,7 +149,7 @@ describe('CreateScreen (SETE-247)', () => {
   it('keeps the situation tile when every other source is off', async () => {
     const tree = await renderCreate(
       navigation(),
-      makeTestReleaseConfig(OFFLINE_REVIEW_MVP),
+      makeTestReleaseConfig({...OFFLINE_REVIEW_MVP, situationLearning: true}),
     );
     expect(
       tree.root.findAll(node => node.props.testID === 'create-tile-situation')
@@ -159,6 +159,24 @@ describe('CreateScreen (SETE-247)', () => {
       tree.root.findAll(node => node.props.testID === 'create-empty-state')
         .length,
     ).toBe(0);
+  });
+
+  it('shows the situation tile only when its flag is on', async () => {
+    const flaggedOff = await renderCreate();
+    expect(
+      flaggedOff.root.findAll(
+        node => node.props.testID === 'create-tile-situation',
+      ),
+    ).toHaveLength(0);
+
+    const flaggedOn = await renderCreate(
+      navigation(),
+      makeTestReleaseConfig({...CORE_WITH_REVIEW, situationLearning: true}),
+    );
+    await pressByTestID(flaggedOn, 'create-tile-situation');
+    expect(mockAppNavigation.startCreate).toHaveBeenCalledWith({
+      kind: 'situation',
+    });
   });
 });
 

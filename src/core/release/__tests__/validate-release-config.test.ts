@@ -7,6 +7,7 @@ import {
   getReleaseConfig,
   listReleaseConfigNames,
 } from '../release-manifest';
+import type {FeatureRegistryEntry} from '../types';
 import {validateReleaseConfig} from '../validate-release-config';
 
 describe('validateReleaseConfig', () => {
@@ -24,7 +25,7 @@ describe('validateReleaseConfig', () => {
     expect(result.valid).toBe(true);
     expect(result.errors).toEqual([]);
 
-    for (const entry of featureRegistry) {
+    for (const entry of featureRegistry as readonly FeatureRegistryEntry[]) {
       if (entry.status === 'not_implemented') {
         expect(Boolean(config.features[entry.key])).toBe(false);
       } else {
@@ -45,7 +46,7 @@ describe('validateReleaseConfig', () => {
     expect(result.valid).toBe(true);
     expect(result.errors).toEqual([]);
 
-    for (const entry of featureRegistry) {
+    for (const entry of featureRegistry as readonly FeatureRegistryEntry[]) {
       if (entry.status === 'not_implemented') {
         expect(Boolean(config.features[entry.key])).toBe(false);
       } else {

@@ -21,6 +21,7 @@ const dev: ReleaseConfig = {
     cartoonTheme: true,
     stickerSoftTheme: true,
     reviewSystem: true,
+    situationLearning: true,
     youtubeLearning: true,
   },
 };

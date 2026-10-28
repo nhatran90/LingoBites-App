@@ -79,5 +79,6 @@ export const ALL_IMPLEMENTED_FEATURES: Partial<Record<FeatureKey, boolean>> = {
   ...MT_CORE_INGESTION,
   ...FULL_THEME_STACK,
   reviewSystem: true,
+  situationLearning: true,
   youtubeLearning: true,
 };

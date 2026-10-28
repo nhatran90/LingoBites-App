@@ -59,6 +59,7 @@ export function CreateScreen(_props: Props) {
   const youtubeCreation = useYouTubeLessonCreation();
   const youtubeEnabled = youtubeCreation.status === 'available';
   const pasteEnabled = config.features.pasteTextInput;
+  const situationEnabled = config.features.situationLearning;
 
   const openCamera = useCallback(
     () => appNavigation.startCreate({kind: 'camera'}),
@@ -90,14 +91,16 @@ export function CreateScreen(_props: Props) {
       testID: 'create-tile-youtube',
     });
   }
-  tiles.push({
-    icon: 'record_voice_over',
-    labelKey: 'moment.tile_title',
-    descKey: 'moment.tile_desc',
-    a11yKey: 'moment.tile_title',
-    onPress: () => appNavigation.startCreate({kind: 'situation'}),
-    testID: 'create-tile-situation',
-  });
+  if (situationEnabled) {
+    tiles.push({
+      icon: 'record_voice_over',
+      labelKey: 'moment.tile_title',
+      descKey: 'moment.tile_desc',
+      a11yKey: 'moment.tile_title',
+      onPress: () => appNavigation.startCreate({kind: 'situation'}),
+      testID: 'create-tile-situation',
+    });
+  }
   if (pasteEnabled) {
     tiles.push({
       icon: 'content_paste',

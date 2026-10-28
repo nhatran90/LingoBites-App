@@ -40,10 +40,10 @@ jobs:
       fingerprint: ${{ steps.fingerprint.outputs.hash }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22.22.0'
           cache: yarn
@@ -83,7 +83,7 @@ jobs:
       FINGERPRINT: ${{ needs.checks.outputs.fingerprint }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Verify required secrets are present
         run: |
@@ -143,7 +143,7 @@ jobs:
 
       - name: Look up previous build with the same fingerprint
         id: previous
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: .release-marker
           key: ${{ steps.release-key.outputs.key }}
@@ -180,7 +180,7 @@ jobs:
 
       - name: Setup Node
         if: steps.gate.outputs.build == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22.22.0'
           cache: yarn
@@ -209,7 +209,7 @@ jobs:
         # Xcode does not pass CCACHE_DIR to the compiler, so this is ccache's
         # default directory on macOS.
         if: steps.gate.outputs.build == 'true'
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/Library/Caches/ccache
           key: ccache-ios-${{ runner.os }}-${{ github.run_id }}
@@ -217,7 +217,7 @@ jobs:
 
       - name: Restore CocoaPods cache
         if: steps.gate.outputs.build == 'true'
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/Library/Caches/CocoaPods
           key: pods-cache-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock', 'yarn.lock') }}
@@ -359,7 +359,7 @@ jobs:
 
       - name: Save uploaded fingerprint
         if: success() && steps.gate.outputs.build == 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: .release-marker
           key: ${{ steps.release-key.outputs.key }}

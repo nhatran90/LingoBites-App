@@ -1,3 +1,5 @@
+> **Lưu trữ:** mô tả bản cũ, không còn đúng với code hiện tại. Xem [`architecture/feature-map.md`](../../architecture/feature-map.md).
+
 # LingoBites Offline Review MVP — Manual QA & Release Acceptance
 
 - **Issue:** SETE-101 (SETE-92 Task 9), scheduler acceptance resolved in SETE-102 (Task 10)

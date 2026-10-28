@@ -1,3 +1,5 @@
+> **Lưu trữ:** mô tả bản cũ, không còn đúng với code hiện tại. Xem [`architecture/feature-map.md`](../../architecture/feature-map.md).
+
 # SETE-291 — Báo cáo Kiểm thử Toàn diện & Ma trận Test Case: Luồng "Học qua video" (Video Learning Workflow) trên Simulator qua Orca CLI
 
 - **Mã công việc:** SETE-291 (Issue: `01a09995-2cb8-714f-937c-473be8245881`)

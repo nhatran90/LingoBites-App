@@ -1,3 +1,5 @@
+> **Lưu trữ:** mô tả bản cũ, không còn đúng với code hiện tại. Xem [`architecture/feature-map.md`](../architecture/feature-map.md).
+
 # Stage 6 QA Report: Flashcard/SRS Feature
 
 **Date:** 2026-08-17  

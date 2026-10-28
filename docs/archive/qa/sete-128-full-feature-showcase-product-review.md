@@ -1,3 +1,5 @@
+> **Lưu trữ:** mô tả bản cũ, không còn đúng với code hiện tại. Xem [`architecture/feature-map.md`](../../architecture/feature-map.md).
+
 # SETE-128 Full Feature Showcase — Final Gates & Product Review
 
 - **Issue:** SETE-150 (SETE-128 TASK-07)

@@ -6,7 +6,6 @@ import {AppThemeProvider} from '@ui/theme';
 
 import {FeatureFlagProvider} from '@core/release';
 
-import {version as appVersion} from '../../../../../package.json';
 import {SupportAboutScreen} from '../SupportAboutScreen';
 
 const mockNavigate = jest.fn();
@@ -29,6 +28,7 @@ jest.mock('@core/localData', () => ({
 
 jest.mock('@core/api/appConfig', () => ({
   getSupportEmail: () => 'support@lingobites.app',
+  getAppVersion: () => '1.2.3',
   getAppConfig: () => ({apiBaseUrl: 'https://test.lingobites.app'}),
 }));
 
@@ -167,6 +167,7 @@ describe('SupportAboutScreen', () => {
     });
     const text = JSON.stringify(tree!.toJSON());
     expect(text).toContain('Phiên bản');
-    expect(text).toContain(appVersion);
+    // The build's version (env), not package.json's 0.0.1.
+    expect(text).toContain('1.2.3');
   });
 });

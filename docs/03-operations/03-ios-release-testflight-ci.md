@@ -67,6 +67,12 @@ It is passed to Xcode as `CURRENT_PROJECT_VERSION`, so no project file is modifi
 Set `IOS_APP_BUILD_NUMBER` to force a specific value. `IOS_APP_VERSION_NAME` still
 comes from `APP_ENV_FILE`; bump it yourself for a new release version.
 
+Before a store submission: bump `IOS_APP_VERSION_NAME` in `.env.production`, push
+it with `yarn env:push:production`, then run this workflow with `force_build` (the
+fingerprint does not change when only the env file does). The app shows and reports
+this value (Profile → Giới thiệu, analytics, `X-App-Version`); `package.json`'s
+`version` is not used.
+
 ## How to verify a run succeeded
 
 - The job's "Build and upload to TestFlight" step logs the fastlane summary,

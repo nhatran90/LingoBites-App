@@ -48,6 +48,8 @@ Automatic. Before building, the fastlane lane `next_android_version_code` reads 
 
 To force a specific value, set `ANDROID_VERSION_CODE` in the job environment (or in `.env.android-build.local` for local builds). `ANDROID_APP_VERSION_NAME` still comes from `APP_ENV_FILE`; bump it yourself for a new release version.
 
+Before a store submission: bump `ANDROID_APP_VERSION_NAME` in `.env.production`, push it with `yarn env:push:production`, then run this workflow with `force_build`. The app shows and reports this value (Profile → Giới thiệu, analytics, `X-App-Version`); `package.json`'s `version` is not used.
+
 ## Prerequisites on Google Play
 
 - The app exists in Play Console with package name = `ANDROID_BUNDLE_ID`, and the first AAB was uploaded manually (Play rejects API uploads before that).

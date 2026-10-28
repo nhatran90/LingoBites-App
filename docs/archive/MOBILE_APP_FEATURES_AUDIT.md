@@ -1,3 +1,5 @@
+> **Lưu trữ:** mô tả bản cũ, không còn đúng với code hiện tại. Xem [`architecture/feature-map.md`](../architecture/feature-map.md).
+
 # Báo Cáo Tổng Hợp Tính Năng & Tiến Độ Mobile App React Native (LingoBites-App)
 
 Dưới đây là kết quả review, audit toàn diện toàn bộ mã nguồn, các module chức năng, navigation, state stores và hệ thống release/feature flags của ứng dụng **LingoBites Mobile App (React Native)**.

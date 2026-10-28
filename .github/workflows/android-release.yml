@@ -41,10 +41,10 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22.22.0'
           cache: yarn
@@ -74,7 +74,7 @@ jobs:
       ENVFILE: .env.${{ inputs.env }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Verify required secrets are present
         run: |
@@ -131,7 +131,7 @@ jobs:
           APP_ENV_FILE: ${{ secrets.APP_ENV_FILE }}
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22.22.0'
           cache: yarn
@@ -159,7 +159,7 @@ jobs:
 
       - name: Look up previous build with the same fingerprint
         id: previous
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: .release-marker
           key: ${{ steps.release-key.outputs.key }}
@@ -184,7 +184,7 @@ jobs:
 
       - name: Setup Java
         if: steps.gate.outputs.build == 'true'
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: zulu
           java-version: '17'
@@ -194,7 +194,7 @@ jobs:
         # again after each run (setup-java's `cache: gradle` only saved them when
         # the build scripts changed, so the build cache went stale).
         if: steps.gate.outputs.build == 'true'
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Setup Ruby (bundler)
         if: steps.gate.outputs.build == 'true'
@@ -221,7 +221,7 @@ jobs:
         # Native (C++) objects from earlier runs. A new key every run so the cache is
         # always saved; restore-keys picks up the most recent one.
         if: steps.gate.outputs.build == 'true'
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/ccache
           key: ccache-android-${{ runner.os }}-${{ github.run_id }}
@@ -290,7 +290,7 @@ jobs:
 
       - name: Upload AAB artifact
         if: success() && steps.gate.outputs.build == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: lingobites-${{ inputs.env }}-${{ github.run_number }}-aab
           path: android/app/build/outputs/bundle/${{ inputs.env }}Release/*.aab
@@ -304,7 +304,7 @@ jobs:
 
       - name: Save uploaded fingerprint
         if: success() && steps.gate.outputs.build == 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: .release-marker
           key: ${{ steps.release-key.outputs.key }}

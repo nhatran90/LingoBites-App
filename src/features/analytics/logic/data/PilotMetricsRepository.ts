@@ -8,6 +8,7 @@
 
 import {listErrorEvents, listSpeakingRecordings} from '@features/speaking';
 
+import {getAppVersion} from '@core/api/appConfig';
 import {getDatabase} from '@core/db/database';
 
 export type CapabilityProgressReport = {
@@ -286,7 +287,7 @@ export function exportPrivacySafeMetrics(
   return {
     schema_version: 'lingobites-pilot-metrics-v1',
     exported_at: nowIso ?? new Date().toISOString(),
-    app_version: '0.0.1',
+    app_version: getAppVersion(),
     aggregate_metrics: {
       sentences_spoken_without_looking:
         report.sentencesSpokenWithoutLookingCount,

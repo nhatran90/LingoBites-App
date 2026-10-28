@@ -1,3 +1,5 @@
+> **Lưu trữ:** mô tả bản cũ, không còn đúng với code hiện tại. Xem [`architecture/feature-map.md`](../../architecture/feature-map.md).
+
 # SETE-276 — Bằng chứng chốt preset `production` và xác thực staging OCR/AI/YouTube
 
 Ngày ghi: 2026-09-12. Phạm vi: preset phát hành + hành vi timeout / rate limit /

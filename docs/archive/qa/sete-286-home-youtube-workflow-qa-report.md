@@ -1,3 +1,5 @@
+> **Lưu trữ:** mô tả bản cũ, không còn đúng với code hiện tại. Xem [`architecture/feature-map.md`](../../architecture/feature-map.md).
+
 # SETE-286 — Báo cáo Kiểm thử Toàn diện & Ma trận Test Case: Luồng "Học qua video" từ Home (Orca CLI Simulator)
 
 - **Mã công việc:** SETE-286 (Issue: `01a098bd-3a76-7abe-95b0-b096aee01063`)

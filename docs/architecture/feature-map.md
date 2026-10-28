@@ -1,8 +1,8 @@
 # Bản đồ tính năng đang hoạt động
 
-> Dựng lại từ code, không từ tài liệu cũ. Snapshot: App `main @ a1826c8`,
-> Server `main @ cdb698f`, cờ tính năng theo `src/core/release/configs/production.ts`
-> (11/10/2026). Khi thêm/bỏ màn hình, route hoặc cờ, cập nhật lại file này.
+> Dựng lại từ code, không từ tài liệu cũ. Snapshot: App `main @ 53670ea`,
+> Server `main @ 4b04ca1`, cờ tính năng theo `src/core/release/configs/production.ts`
+> (28/10/2026). Khi thêm/bỏ màn hình, route hoặc cờ, cập nhật lại file này.
 
 Nguồn chính:
 
@@ -55,12 +55,28 @@ flowchart TD
   UL --> Player
   UL --> UST[UnitSummativeTask]
 
-  Lessons --> LIB[LibraryList: 7 mục] --> Player
+  Lessons --> LIB[LibraryList: 4 tab, 12 mục] --> Player
   Lessons --> Create
   VH --> LIB
 
+  subgraph WordFlow[Từ vựng theo gói, Combo, mẫu câu & thì]
+    WP[WordPath] --> WPk[WordPack]
+    WPk --> PL[PackLearn]
+    WPk --> QK[QuickKnownCheck]
+    WPk --> CSu[ComboSetup] --> CS[ComboSet]
+    CH[ComboHistory] --> CS
+    PD[PatternDetail] --> CSu
+    TD[TenseDetail]
+  end
+  LIB --> WP
+  LIB --> PD
+  LIB --> TD
+  Today --> WPk
+
   Player[CanonicalLessonPlayer] --> Flow[LessonFlowPlayer]
   Player --> Prac[Practice]
+  Player --> Pron[Luyện phát âm] -.-> PS[PronunciationSettings]
+  Player --> TD
 
   Today --> DR
   Today --> IR[ItemReview]
@@ -101,14 +117,15 @@ vào tab. Có thể làm lại từ Profile.
 ### Tạo bài từ nội dung riêng
 
 4 nguồn trong `CreateHub`. Tất cả cần server; khi offline các ô vẫn hiện nhưng
-bị khoá.
+bị khoá. Ô Ảnh, Dán văn bản và Kể tình huống theo cờ `imageInput`,
+`pasteTextInput`, `situationLearning` (đều bật ở production).
 
-| Nguồn                   | Luồng                                                                                         |
-| ----------------------- | --------------------------------------------------------------------------------------------- |
-| Ảnh (camera / thư viện) | `ImageCapture` → phân tích ảnh → `MomentReview` → xác nhận → `LessonCreation`                 |
-| Dán văn bản             | `PasteText` → `LessonCreation`                                                                |
-| Kể tình huống           | `SituationInput` → tạo bài → mở bài                                                           |
-| YouTube                 | nhập link → `LessonCreation`; ô ẩn khi app chưa liên lạc được server (server luôn báo hỗ trợ) |
+| Nguồn                   | Luồng                                                                                                 |
+| ----------------------- | ----------------------------------------------------------------------------------------------------- |
+| Ảnh (camera / thư viện) | `ImageCapture` → phân tích ảnh → `MomentReview` → xác nhận → `LessonCreation`                         |
+| Dán văn bản             | `PasteText` → `LessonCreation`                                                                        |
+| Kể tình huống           | `SituationInput` → tạo bài → mở bài                                                                   |
+| YouTube                 | nhập link → `LessonCreation`; ô ẩn khi server tắt switch `youtube` hoặc app chưa liên lạc được server |
 
 - API: `POST /api/v1/images/analyze`, `POST /api/v1/lesson-creations`,
   `POST /api/v1/lesson-creations/:id/confirm`, `POST /api/v1/moments`,
@@ -148,12 +165,53 @@ liệu cục bộ, sự kiện ôn được gửi lên server. Phòng nói có l
 
 ### Thư viện (tab Lessons)
 
-Hai nhóm. **Của tôi:** Bài học, Khoảnh khắc, Video, Từ vựng, Ngữ pháp.
-**Khám phá:** Bài học công khai, Video công khai. `VideoHub` trên Home mở thẳng
-vào mục video.
+4 tab, 12 mục (`src/features/lesson/library/logic/librarySections.ts`):
+
+| Tab         | Mục                                                                       |
+| ----------- | ------------------------------------------------------------------------- |
+| Khám phá    | Học theo gói, Kho mẫu câu, Bản đồ thì, Bài học công khai, Video công khai |
+| Đã lưu      | Từ vựng của tôi, Ngữ pháp của tôi, Bộ câu đã học, Câu đã lưu              |
+| Bài tôi tạo | Bài học của tôi, Video của tôi                                            |
+| Khoảnh khắc | Khoảnh khắc                                                               |
+
+`VideoHub` trên Home mở thẳng vào mục video.
 
 - Màn hình: `LessonsList`, `LibraryList`, `VideoHub`
 - API: `GET /api/v1/moments/library`, `GET /api/v1/lessons`
+
+### Từ vựng theo gói & Combo
+
+Gói từ (Word Path) để tải và học; trong gói có học từng từ, kiểm tra nhanh từ
+đã biết và tạo Combo (bộ câu ghép từ của gói với một mẫu câu / thì). Today có
+thể gợi ý một gói (`word_pack`).
+
+- Màn hình: `WordPath`, `WordPack`, `PackLearn`, `QuickKnownCheck`, `ComboSetup`,
+  `ComboSet`, `ComboHistory`
+- API: `GET /v1/word-path`, `GET /v1/word-packs/:id`, `POST /v1/word-packs/:id/learn`,
+  `GET /v1/combo/options`, `GET /v1/combo/situations`, `GET|POST /v1/combo/sets`,
+  `GET /v1/combo/sets/:id`, `POST /v1/combo/sets/:id/more`,
+  `POST /v1/combo/sentences/:id/reports`
+
+### Mẫu câu & thì
+
+Kho mẫu câu và bản đồ thì trong Thư viện; từ một mẫu câu có thể tạo Combo. Thẻ
+thì trong bài học mở `TenseDetail`.
+
+- Màn hình: `PatternDetail`, `TenseDetail` (danh sách nằm trong `LibraryList`)
+- API: `GET /v1/library/patterns`, `GET /v1/library/tenses`
+
+### Phát âm
+
+Đọc to câu hoặc từ (trong bài, thẻ từ của bài, gói từ, thẻ ôn) và nhận điểm từ
+Azure. Bản ghi tải lên `/v1/recordings`, server chấm bằng worker nền. Người học
+đồng ý ghi âm một lần; tắt / bật lại ở `PronunciationSettings`. Không mở cho
+người học nhỏ tuổi (A11).
+
+- Màn hình: sheet `PronunciationPracticeSheet` trong trình phát bài, `PronunciationSettings`
+- API: `POST /v1/recordings`, `PUT /v1/recordings/:id/content`,
+  `GET /v1/pronunciation/attempts/:recordingId`
+- Điều kiện ở server: `PRONUNCIATION_ENABLED=true`, `AZURE_SPEECH_KEY` /
+  `AZURE_SPEECH_REGION`, bucket `RECORDINGS_GCS_BUCKET`, switch `pronunciation`
 
 ### Hồ sơ, cài đặt & offline
 
@@ -166,13 +224,25 @@ diện (7 theme màu), tải bài để học offline. Dữ liệu cục bộ đ
 
 ## 3. Chưa bật hoặc chỉ có một phần
 
-| Mục                                           | Trạng thái              | Ghi chú                                                                                    |
-| --------------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------ |
-| Hỗ trợ phát âm                                | Chưa làm                | Cờ `pronunciationSupport` có trong registry nhưng tắt ở production.                        |
-| Cờ `situationLearning`                        | Chưa làm                | Cờ vẫn tắt, nhưng ô "Kể tình huống" trong `CreateHub` không phụ thuộc cờ này nên vẫn hiện. |
-| `FeatureStatus`, `TtsSpike`                   | Chỉ dev                 | Chỉ đăng ký khi `__DEV__`.                                                                 |
-| OCR riêng & pipeline phân tích AI bất đồng bộ | Đã gỡ                   | Gỡ khỏi server ở commit `d8e9942`. Luồng ảnh hiện đi qua `/api/v1/images/analyze`.         |
-| Bản ghi âm trên server                        | Server có, app chưa gọi | Route `/v1/recordings` tồn tại nhưng không thấy app gọi trực tiếp.                         |
+| Mục                                           | Trạng thái | Ghi chú                                                                            |
+| --------------------------------------------- | ---------- | ---------------------------------------------------------------------------------- |
+| `FeatureStatus`, `TtsSpike`                   | Chỉ dev    | Chỉ đăng ký khi `__DEV__`.                                                         |
+| OCR riêng & pipeline phân tích AI bất đồng bộ | Đã gỡ      | Gỡ khỏi server ở commit `d8e9942`. Luồng ảnh hiện đi qua `/api/v1/images/analyze`. |
+
+## 3b. Switch phía server
+
+Admin bật / tắt không cần deploy (`server.features`, `today.features`); app đọc
+qua `GET /v1/capabilities`. Một tính năng chỉ chạy khi server sẵn sàng (env,
+key, ffmpeg) **và** admin bật.
+
+| Switch              | Ảnh hưởng ở app                                         |
+| ------------------- | ------------------------------------------------------- |
+| `youtube`           | Ô YouTube trong `CreateHub`                             |
+| `compose`           | "Học sâu theo 6 bước" từ câu chọn trong bài             |
+| `moments.describe`  | Ý định "Tả" trong Kể tình huống                         |
+| `evaluation.speech` | Chấm câu trả lời nói của bài tập nói                    |
+| `pronunciation`     | Luyện phát âm                                           |
+| `today.features`    | Từng loại việc trong kế hoạch Today (ôn tập, gói từ, …) |
 
 ## 4. Phía quản trị (admin-web, repo Server)
 

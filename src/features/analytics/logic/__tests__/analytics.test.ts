@@ -4,6 +4,7 @@ import {
   resetAnalyticsAdapter,
   sanitizeAnalyticsPayload,
   setAnalyticsAdapter,
+  trackAppOpened,
   trackEvent,
 } from '../..';
 
@@ -95,5 +96,14 @@ describe('funnel analytics', () => {
     const serialized = JSON.stringify(adapter.getEvents());
     expect(serialized).not.toContain('We are offering');
     expect(serialized).not.toContain('confirmed_text');
+  });
+
+  it('reports the build version on app_opened', () => {
+    trackAppOpened();
+    const opened = adapter
+      .getEvents()
+      .find(recorded => recorded.event === 'app_opened');
+    // From IOS_/ANDROID_APP_VERSION_NAME (jest.setup.js), not package.json.
+    expect(opened?.properties.app_version).toBe('1.0.1');
   });
 });

@@ -7,7 +7,7 @@ export const featureRegistry = [
     required: false,
     releaseGroup: 'foundation',
     status: 'ready',
-    entryPoint: 'HomeScreen -> PasteText',
+    entryPoint: 'CreateHub -> PasteText -> LessonCreation',
   },
   {
     key: 'imageInput',
@@ -15,7 +15,7 @@ export const featureRegistry = [
     required: false,
     releaseGroup: 'foundation',
     status: 'ready',
-    entryPoint: 'HomeScreen -> PasteText',
+    entryPoint: 'CreateHub -> Ảnh (camera / thư viện) -> ImageCapture',
   },
   {
     key: 'ocrScanner',
@@ -23,7 +23,7 @@ export const featureRegistry = [
     required: false,
     releaseGroup: 'foundation',
     status: 'ready',
-    entryPoint: 'HomeScreen -> PasteText',
+    entryPoint: 'CreateHub -> Ảnh (camera / thư viện) -> ImageCapture',
   },
   {
     key: 'ocrReviewEdit',
@@ -59,7 +59,7 @@ export const featureRegistry = [
     required: false,
     releaseGroup: 'ui',
     status: 'ready',
-    entryPoint: 'HomeScreen -> PasteText',
+    entryPoint: 'Toàn app (AppThemeProvider)',
   },
   {
     key: 'themeSwitcher',
@@ -67,7 +67,7 @@ export const featureRegistry = [
     required: false,
     releaseGroup: 'ui',
     status: 'ready',
-    entryPoint: 'HomeScreen -> PasteText',
+    entryPoint: 'Profile -> Cài đặt ứng dụng -> Giao diện',
   },
   {
     key: 'darkTheme',
@@ -75,7 +75,7 @@ export const featureRegistry = [
     required: false,
     releaseGroup: 'ui',
     status: 'ready',
-    entryPoint: 'HomeScreen -> PasteText',
+    entryPoint: 'Profile -> Cài đặt ứng dụng -> Giao diện -> Dark',
   },
   {
     key: 'pastelKidsTheme',
@@ -83,7 +83,7 @@ export const featureRegistry = [
     required: false,
     releaseGroup: 'ui',
     status: 'ready',
-    entryPoint: 'HomeScreen -> PasteText',
+    entryPoint: 'Profile -> Cài đặt ứng dụng -> Giao diện -> Pastel Kids',
   },
   {
     key: 'coreTheme',
@@ -91,7 +91,7 @@ export const featureRegistry = [
     required: false,
     releaseGroup: 'ui',
     status: 'ready',
-    entryPoint: 'HomeScreen -> PasteText',
+    entryPoint: 'Profile -> Cài đặt ứng dụng -> Giao diện -> Core',
   },
   {
     key: 'neoTheme',
@@ -99,7 +99,7 @@ export const featureRegistry = [
     required: false,
     releaseGroup: 'ui',
     status: 'ready',
-    entryPoint: 'HomeScreen -> PasteText',
+    entryPoint: 'Profile -> Cài đặt ứng dụng -> Giao diện -> Neo',
   },
   {
     key: 'comicTheme',
@@ -107,7 +107,7 @@ export const featureRegistry = [
     required: false,
     releaseGroup: 'ui',
     status: 'ready',
-    entryPoint: 'HomeScreen -> PasteText',
+    entryPoint: 'Profile -> Cài đặt ứng dụng -> Giao diện -> Comic',
   },
   {
     key: 'cartoonTheme',
@@ -115,7 +115,7 @@ export const featureRegistry = [
     required: false,
     releaseGroup: 'ui',
     status: 'ready',
-    entryPoint: 'HomeScreen -> PasteText',
+    entryPoint: 'Profile -> Cài đặt ứng dụng -> Giao diện -> Cartoon',
   },
   {
     key: 'stickerSoftTheme',
@@ -123,7 +123,7 @@ export const featureRegistry = [
     required: false,
     releaseGroup: 'ui',
     status: 'ready',
-    entryPoint: 'HomeScreen -> PasteText',
+    entryPoint: 'Profile -> Cài đặt ứng dụng -> Giao diện -> Sticker Soft',
   },
   {
     key: 'reviewSystem',
@@ -131,15 +131,15 @@ export const featureRegistry = [
     required: false,
     releaseGroup: 'practice',
     status: 'ready',
-    entryPoint: 'HomeScreen -> PasteText',
+    entryPoint: 'Home / Today -> DailyReview',
   },
   {
     key: 'situationLearning',
-    module: 'src/features/lesson/player',
+    module: 'src/features/input',
     required: false,
     releaseGroup: 'expansion',
-    status: 'not_implemented',
-    limitations: ['Not implemented yet'],
+    status: 'ready',
+    entryPoint: 'CreateHub -> SituationInput -> MomentReview',
   },
   {
     key: 'youtubeLearning',

@@ -1,6 +1,6 @@
 import {Platform} from 'react-native';
 
-import {APP_VERSION} from '@core/appMetadata';
+import {getAppVersion} from '@core/api/appConfig';
 import {getOrCreateAnonymousUserId} from '@core/db/anonymousUserId';
 
 import {createConsoleAnalyticsAdapter} from './adapters/ConsoleAnalyticsAdapter';
@@ -38,7 +38,7 @@ export function trackAppOpened(): void {
 
   trackEvent('app_opened', {
     user_id: userId,
-    app_version: APP_VERSION,
+    app_version: getAppVersion(),
     platform: Platform.OS,
   });
 }

@@ -88,6 +88,8 @@ const drink = {
   interests: ['food'],
 };
 
+const mounted: ReactTestRenderer.ReactTestRenderer[] = [];
+
 async function renderScreen() {
   let tree!: ReactTestRenderer.ReactTestRenderer;
   await act(async () => {
@@ -102,6 +104,7 @@ async function renderScreen() {
       </FeatureFlagProvider>,
     );
   });
+  mounted.push(tree);
   return tree;
 }
 
@@ -134,6 +137,13 @@ function sendButton(tree: ReactTestRenderer.ReactTestRenderer) {
       typeof node.props.style === 'function',
   );
 }
+
+// The "building" card loops its bubble animation until it unmounts; a tree
+// left mounted keeps that loop on real timers past the end of this file, and
+// it then fails whichever suite the worker runs next.
+afterEach(() => {
+  act(() => mounted.splice(0).forEach(tree => tree.unmount()));
+});
 
 describe('SituationInputScreen', () => {
   beforeEach(() => {
